@@ -329,6 +329,27 @@ predict_single({"bedrooms": 3, "bathrooms": 2.0, "sqft_living": 1910, ...})
 # -> {"predicted_price": ..., "importance_type": "xgboost_gain", "top_factors_gain": [...]}
 ```
 
+## Deploy to Vercel
+
+A single Vercel deployment serves both the static frontend and the FastAPI backend:
+
+- `api/index.py` exposes the existing app under `/api/*` (e.g. `/api/predict`, `/api/health`);
+  `vercel.json` routes `/`, `/predict`, and `/health` into the same function.
+- `requirements.txt` is runtime-only; research/training deps live in `requirements-research.txt`
+  (never deployed).
+- `.vercelignore` keeps research artifacts (datasets, imagery, embeddings, vision checkpoints,
+  notebooks, tests, figures) out of the serverless bundle so the lambda stays ~1 MB.
+- No database, no secrets, no environment variables are required by production inference.
+- Local development already mirrors the deployed wiring: `python app/run.py` launches
+  `api.index:app`, so the same `/api/*` paths are used locally and in production.
+
+Run the same-origin integration locally, then push to Vercel (builds `api/index.py` automatically):
+
+```bash
+python app/run.py                      # local dev (same /api/* paths as prod)
+# vercel --prod                        # after: Vercel CLI deploy
+```
+
 ---
 
 ## Limitations & future work

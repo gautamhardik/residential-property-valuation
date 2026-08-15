@@ -114,6 +114,32 @@ def test_health_endpoint():
 
 
 # ---------------------------------------------------------------------------
+# Vercel /api wrapper — must mirror the native backend routes
+# ---------------------------------------------------------------------------
+
+from api.index import app as _vercel_app  # noqa: E402
+
+_api_client = TestClient(_vercel_app)
+
+
+def test_vercel_wrapper_health():
+    r = _api_client.get("/api/health")
+    assert r.status_code == 200
+    assert r.json()["status"] == "ok"
+
+
+def test_vercel_wrapper_predict_matches_native():
+    native = client.post("/predict", json=SMOKE_PAYLOAD).json()
+    api_body = _api_client.post("/api/predict", json=SMOKE_PAYLOAD).json()
+    assert abs(float(api_body["predicted_price"]) - float(native["predicted_price"])) < 0.01
+    assert api_body["model_role"] == "primary"
+
+
+def test_vercel_wrapper_unknown_route_404():
+    assert _api_client.get("/api/does-not-exist").status_code == 404
+
+
+# ---------------------------------------------------------------------------
 # /predict — valid
 # ---------------------------------------------------------------------------
 

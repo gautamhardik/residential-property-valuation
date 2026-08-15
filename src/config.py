@@ -21,7 +21,13 @@ APP_MODELS_DIR = MODELS_DIR / "deployed"
 
 for _d in (PREPROCESSED_DIR, PREDICTIONS_DIR, REPORTS_DIR, FIGURES_DIR,
            MODELS_DIR, APP_MODELS_DIR):
-    _d.mkdir(parents=True, exist_ok=True)
+    # Best-effort. Training/research scripts rely on these dirs existing, but the
+    # serverless (Vercel) filesystem is read-only and inference never writes them,
+    # so an inability to create must not crash import at deploy time.
+    try:
+        _d.mkdir(parents=True, exist_ok=True)
+    except OSError:
+        pass
 
 # --- Seeds ---
 RANDOM_STATE = 42

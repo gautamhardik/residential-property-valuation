@@ -39,7 +39,7 @@ def main() -> None:
         sys.executable,
         "-m",
         "uvicorn",
-        "app.backend.main:app",
+        "api.index:app",
         "--host",
         "127.0.0.1",
         "--port",

@@ -1,0 +1,30 @@
+# Research / training dependencies — for local training & reproducibility ONLY.
+#
+# NOT installed by `pip install -r requirements.txt` and not deployed to Vercel.
+# Install with: pip install -r requirements-research.txt
+
+# --- Deep learning / vision (satellite experiments, archived research) ---
+torch>=2.1
+torchvision>=0.16
+Pillow>=10.0
+opencv-python>=4.8
+
+# --- Visualization (report figures / notebook plots) ---
+matplotlib>=3.7
+seaborn>=0.13
+
+# --- Additional booster libraries (baselines / experiments) ---
+lightgbm>=4.0
+catboost>=1.2
+
+# --- Excel dataset loading (training only) ---
+openpyxl>=3.1
+
+# --- Data acquisition (Mapbox tile downloads for satellite research) ---
+requests>=2.31
+python-dotenv>=1.0
+
+# --- Notebooks ---
+jupyter>=1.0
+ipykernel>=6
+nbformat>=5

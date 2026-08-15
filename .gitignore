@@ -40,6 +40,9 @@ logs/
 .idea/
 *.pyc
 
+# --- Vercel local ---
+.vercel/
+
 # --- OS junk ---
 Thumbs.db
 .DS_Store

@@ -1,0 +1,38 @@
+# Exclude research / training / non-runtime material from the deployed bundle.
+# The production inference path needs only: api/, app/, src/,
+# models/deployed/tabular_{model,pipeline}.joblib, reports/val_predictions_best_tabular.csv,
+# and requirements.txt.
+
+# --- Datasets & satellite imagery (absent from fresh clones anyway) ---
+data/
+images/
+
+# --- Notebooks ---
+notebooks/
+
+# --- Preprocessed research caches (embeddings / pickles) ---
+preprocessed/
+
+# --- Vision / research model checkpoints (NOT production inference) ---
+models/vision/
+models/deployed/*.pt
+
+# --- Non-deployed outputs ---
+predictions/
+scripts/
+tests/
+reports/figures/
+archive/
+
+# --- Research-only dependency file ---
+requirements-research.txt
+
+# --- Secrets ---
+.env
+
+# --- Runtime/interpreter junk ---
+.venv/
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/

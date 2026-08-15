@@ -13,8 +13,9 @@ import pandas as pd
 from src.features.build_features import _engineer
 from src.inference.artifacts import load_tabular_artifacts
 from src.inference.predict import to_row
+from src.config import PROJECT_ROOT
 
-HOLDOUT_RESIDUALS = "reports/val_predictions_best_tabular.csv"
+HOLDOUT_RESIDUALS = PROJECT_ROOT / "reports" / "val_predictions_best_tabular.csv"
 
 # Engineered + raw feature names -> human-readable labels (single source mirrored in the UI).
 FEATURE_LABELS = {
