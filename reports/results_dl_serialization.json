@@ -1,0 +1,19 @@
+{
+  "phase": "Phase 8",
+  "artifacts": {
+    "torchscript": "C:\\Users\\hiten\\Documents\\Satellite_Property_Valuation\\models\\deployed\\vision_price.pt"
+  },
+  "model": "ResNet18 layer4 partial fine-tune + regression head",
+  "verification": {
+    "n_val": 434,
+    "py_rmse": 297453.22568120214,
+    "py_r2": 0.2960202776482529,
+    "jit_rmse": 297453.22568120214,
+    "jit_r2": 0.2960202776482529,
+    "r2_difference": 0.0,
+    "rmse_difference": 0.0,
+    "max_abs_pred_difference": 0.0,
+    "mean_abs_pred_difference": 0.0,
+    "acceptance": "R2 diff <= 0.001"
+  }
+}

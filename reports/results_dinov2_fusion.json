@@ -1,0 +1,27 @@
+{
+  "encoder": "dinov2_vits14",
+  "split": {
+    "covered_train": 12888,
+    "covered_val": 3222
+  },
+  "results": [
+    {
+      "experiment": "E4_dino_tabular_only",
+      "rmse": 103970.03984719668,
+      "mse": 10809769185.827665,
+      "mae": 61169.14840597843,
+      "r2": 0.9202712973392284,
+      "rmse_improvement_pct": 0.0,
+      "r2_change": 0.0
+    },
+    {
+      "experiment": "E6_dino_fusion",
+      "rmse": 109423.86474563564,
+      "mse": 11973582175.871162,
+      "mae": 64571.42843148665,
+      "r2": 0.9116874600490137,
+      "rmse_improvement_pct": -5.245573538737097,
+      "r2_change": -0.008583837290214724
+    }
+  ]
+}

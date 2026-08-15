@@ -1,0 +1,72 @@
+{
+  "scope": "494 excluded; ONLY the 434 image-covered validation properties",
+  "n_image_val": 434,
+  "note_full_set_excluded": "cite full-set Final XGBoost (RMSE 103,803 / R2 0.9205 on all 16,110) only as a context figure; it is NOT on the image subset and is not part of this comparison.",
+  "models": [
+    {
+      "label": "E4_tabular_control",
+      "family": "tabular",
+      "model": "champion XGBoost",
+      "rmse": 126792.09431119268,
+      "mae": null,
+      "r2": 0.8720892236710663
+    },
+    {
+      "label": "E4B_image_only_frozen",
+      "family": "image (frozen embeddings)",
+      "model": "XGBoost on resnet18 pool",
+      "rmse": 329239.506069325,
+      "mae": null,
+      "r2": 0.1375246989810656
+    },
+    {
+      "label": "E5_mm_rn18",
+      "family": "tabular + frozen embeddings",
+      "model": "XGBoost",
+      "rmse": 139807.697474577,
+      "mae": null,
+      "r2": 0.8444804644889159
+    },
+    {
+      "label": "Final_XGBoost_image_subset",
+      "family": "tabular",
+      "model": "champion XGBoost (out-of-sample)",
+      "rmse": 92073.33031173883,
+      "mae": 58176.44059907835,
+      "r2": 0.9325486746016654
+    },
+    {
+      "label": "Partial FT (price-MSE)",
+      "family": "image (trained CNN)",
+      "model": "resnet18 layer4 partial fine-tune",
+      "rmse": 297453.22568120214,
+      "mae": 187829.55256336406,
+      "r2": 0.2960202776482529
+    },
+    {
+      "label": "Partial FT (log1p-MSE)",
+      "family": "image (trained CNN)",
+      "model": "resnet18 layer4 partial fine-tune",
+      "rmse": 305988.7092586063,
+      "mae": 194876.4341157834,
+      "r2": 0.2550389142920375
+    },
+    {
+      "label": "Trained head (log1p-MSE)",
+      "family": "image (trained CNN)",
+      "model": "resnet18 + trained head",
+      "rmse": 333962.45807973115,
+      "mae": 205011.53967453918,
+      "r2": 0.11260274323820896
+    },
+    {
+      "label": "Trained head (price-MSE)",
+      "family": "image (trained CNN)",
+      "model": "resnet18 + trained head",
+      "rmse": 336577.6193946937,
+      "mae": 220224.50640841015,
+      "r2": 0.0986504367590264
+    }
+  ],
+  "conclusion": "A trained CNN (partial fine-tune R2 0.296) more than doubles the frozen embedding signal (0.138) but still falls far short of the tabular control (0.872). Satellite imagery alone is insufficient; imagery can at most act as a weak auxiliary signal."
+}

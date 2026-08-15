@@ -1,0 +1,431 @@
+{
+  "overall": {
+    "rmse": 103802.76318394655,
+    "mse": 10775013644.622488,
+    "mae": 61172.14421118482,
+    "r2": 0.9205276408524826
+  },
+  "worst_absolute": [
+    {
+      "id": 3835500195,
+      "price": 4489000,
+      "predicted": 3178213.0,
+      "abs_err": 1310787.0,
+      "rel_err": 0.0
+    },
+    {
+      "id": 3262300555,
+      "price": 2458000,
+      "predicted": 3541039.0,
+      "abs_err": 1083039.0,
+      "rel_err": 0.0
+    },
+    {
+      "id": 7159200040,
+      "price": 2900000,
+      "predicted": 1853270.0,
+      "abs_err": 1046730.0,
+      "rel_err": 0.0
+    },
+    {
+      "id": 3760500280,
+      "price": 1950000,
+      "predicted": 1121678.0,
+      "abs_err": 828322.0,
+      "rel_err": 0.0
+    },
+    {
+      "id": 3395000070,
+      "price": 1544500,
+      "predicted": 2312358.0,
+      "abs_err": 767858.0,
+      "rel_err": 0.0
+    },
+    {
+      "id": 5493100366,
+      "price": 1700000,
+      "predicted": 2413274.0,
+      "abs_err": 713274.0,
+      "rel_err": 0.0
+    },
+    {
+      "id": 1337800805,
+      "price": 1755000,
+      "predicted": 1045110.0,
+      "abs_err": 709890.0,
+      "rel_err": 0.0
+    },
+    {
+      "id": 125069038,
+      "price": 2140000,
+      "predicted": 1436007.0,
+      "abs_err": 703993.0,
+      "rel_err": 0.0
+    },
+    {
+      "id": 5460600110,
+      "price": 1050000,
+      "predicted": 1746752.0,
+      "abs_err": 696752.0,
+      "rel_err": 1.0
+    },
+    {
+      "id": 1370800225,
+      "price": 2152500,
+      "predicted": 1464066.0,
+      "abs_err": 688434.0,
+      "rel_err": 0.0
+    }
+  ],
+  "worst_relative": [
+    {
+      "id": 5016003230,
+      "price": 169317,
+      "predicted": 629290.0,
+      "abs_err": 459972.0,
+      "rel_err": 3.0
+    },
+    {
+      "id": 3080000005,
+      "price": 181000,
+      "predicted": 448747.0,
+      "abs_err": 267747.0,
+      "rel_err": 1.0
+    },
+    {
+      "id": 2114700500,
+      "price": 90000,
+      "predicted": 216781.0,
+      "abs_err": 126781.0,
+      "rel_err": 1.0
+    },
+    {
+      "id": 4038000040,
+      "price": 250000,
+      "predicted": 516582.0,
+      "abs_err": 266582.0,
+      "rel_err": 1.0
+    },
+    {
+      "id": 3253500160,
+      "price": 317625,
+      "predicted": 640199.0,
+      "abs_err": 322574.0,
+      "rel_err": 1.0
+    },
+    {
+      "id": 8728100775,
+      "price": 190500,
+      "predicted": 377163.0,
+      "abs_err": 186663.0,
+      "rel_err": 1.0
+    },
+    {
+      "id": 8835900086,
+      "price": 350000,
+      "predicted": 685700.0,
+      "abs_err": 335700.0,
+      "rel_err": 1.0
+    },
+    {
+      "id": 9133600135,
+      "price": 160000,
+      "predicted": 313403.0,
+      "abs_err": 153403.0,
+      "rel_err": 1.0
+    },
+    {
+      "id": 723049530,
+      "price": 126500,
+      "predicted": 247266.0,
+      "abs_err": 120766.0,
+      "rel_err": 1.0
+    },
+    {
+      "id": 8856000545,
+      "price": 100000,
+      "predicted": 187409.0,
+      "abs_err": 87409.0,
+      "rel_err": 1.0
+    }
+  ],
+  "segments": {
+    "price_band": {
+      "Low": {
+        "n": 807,
+        "rmse": 54703.0,
+        "mae": 36511.0,
+        "median_rel_err": 0.098,
+        "mean_bias": 16831.0,
+        "mean_price": 254898.0
+      },
+      "Mid": {
+        "n": 804,
+        "rmse": 56439.0,
+        "mae": 41506.0,
+        "median_rel_err": 0.082,
+        "mean_bias": 9877.0,
+        "mean_price": 383343.0
+      },
+      "High": {
+        "n": 805,
+        "rmse": 70762.0,
+        "mae": 52107.0,
+        "median_rel_err": 0.074,
+        "mean_bias": 1962.0,
+        "mean_price": 530781.0
+      },
+      "Luxury": {
+        "n": 806,
+        "rmse": 178602.0,
+        "mae": 114536.0,
+        "median_rel_err": 0.084,
+        "mean_bias": -30171.0,
+        "mean_price": 989746.0
+      }
+    },
+    "size_band": {
+      "Small": {
+        "n": 811,
+        "rmse": 63467.0,
+        "mae": 43899.0,
+        "median_rel_err": 0.095,
+        "mean_bias": -1125.0,
+        "mean_price": 340574.0
+      },
+      "Medium": {
+        "n": 806,
+        "rmse": 63593.0,
+        "mae": 45500.0,
+        "median_rel_err": 0.086,
+        "mean_bias": 272.0,
+        "mean_price": 425248.0
+      },
+      "Large": {
+        "n": 804,
+        "rmse": 86847.0,
+        "mae": 54059.0,
+        "median_rel_err": 0.074,
+        "mean_bias": 403.0,
+        "mean_price": 522371.0
+      },
+      "XL": {
+        "n": 801,
+        "rmse": 166204.0,
+        "mae": 101571.0,
+        "median_rel_err": 0.082,
+        "mean_bias": -1056.0,
+        "mean_price": 873887.0
+      }
+    },
+    "condition": {
+      "1": {
+        "n": 5,
+        "rmse": 112855.0,
+        "mae": 89462.0,
+        "median_rel_err": 0.245,
+        "mean_bias": 61320.0,
+        "mean_price": 296700.0
+      },
+      "2": {
+        "n": 30,
+        "rmse": 96454.0,
+        "mae": 76306.0,
+        "median_rel_err": 0.218,
+        "mean_bias": -14683.0,
+        "mean_price": 350632.0
+      },
+      "3": {
+        "n": 2044,
+        "rmse": 102031.0,
+        "mae": 59779.0,
+        "median_rel_err": 0.083,
+        "mean_bias": -391.0,
+        "mean_price": 542045.0
+      },
+      "4": {
+        "n": 882,
+        "rmse": 107656.0,
+        "mae": 62412.0,
+        "median_rel_err": 0.085,
+        "mean_bias": 135.0,
+        "mean_price": 517359.0
+      },
+      "5": {
+        "n": 261,
+        "rmse": 104924.0,
+        "mae": 65608.0,
+        "median_rel_err": 0.077,
+        "mean_bias": -1537.0,
+        "mean_price": 623260.0
+      }
+    },
+    "waterfront": {
+      "Non-waterfront": {
+        "n": 3201,
+        "rmse": 101953.0,
+        "mae": 60198.0,
+        "median_rel_err": 0.084,
+        "mean_bias": 436.0,
+        "mean_price": 529580.0
+      },
+      "Waterfront": {
+        "n": 21,
+        "rmse": 262270.0,
+        "mae": 209686.0,
+        "median_rel_err": 0.088,
+        "mean_bias": -124356.0,
+        "mean_price": 2082738.0
+      }
+    },
+    "location_band": {
+      "C-N-C-E": {
+        "n": 145,
+        "rmse": 196760.0,
+        "mae": 115562.0,
+        "median_rel_err": 0.095,
+        "mean_bias": 12513.0,
+        "mean_price": 936403.0
+      },
+      "C-N-C-W": {
+        "n": 208,
+        "rmse": 176867.0,
+        "mae": 118676.0,
+        "median_rel_err": 0.107,
+        "mean_bias": 4116.0,
+        "mean_price": 831695.0
+      },
+      "C-N-E": {
+        "n": 251,
+        "rmse": 93694.0,
+        "mae": 60892.0,
+        "median_rel_err": 0.063,
+        "mean_bias": -2362.0,
+        "mean_price": 691520.0
+      },
+      "C-N-W": {
+        "n": 203,
+        "rmse": 139327.0,
+        "mae": 80496.0,
+        "median_rel_err": 0.087,
+        "mean_bias": -11903.0,
+        "mean_price": 713232.0
+      },
+      "C-S-C-E": {
+        "n": 216,
+        "rmse": 109896.0,
+        "mae": 66388.0,
+        "median_rel_err": 0.083,
+        "mean_bias": -5289.0,
+        "mean_price": 604458.0
+      },
+      "C-S-C-W": {
+        "n": 187,
+        "rmse": 97236.0,
+        "mae": 61987.0,
+        "median_rel_err": 0.135,
+        "mean_bias": 8066.0,
+        "mean_price": 403574.0
+      },
+      "C-S-E": {
+        "n": 181,
+        "rmse": 75376.0,
+        "mae": 47766.0,
+        "median_rel_err": 0.056,
+        "mean_bias": -1156.0,
+        "mean_price": 615173.0
+      },
+      "C-S-W": {
+        "n": 221,
+        "rmse": 64569.0,
+        "mae": 46637.0,
+        "median_rel_err": 0.088,
+        "mean_bias": -2555.0,
+        "mean_price": 427001.0
+      },
+      "N-C-E": {
+        "n": 159,
+        "rmse": 119971.0,
+        "mae": 71924.0,
+        "median_rel_err": 0.075,
+        "mean_bias": -11090.0,
+        "mean_price": 635606.0
+      },
+      "N-C-W": {
+        "n": 245,
+        "rmse": 86889.0,
+        "mae": 59146.0,
+        "median_rel_err": 0.101,
+        "mean_bias": -1814.0,
+        "mean_price": 497593.0
+      },
+      "N-E": {
+        "n": 161,
+        "rmse": 96176.0,
+        "mae": 58845.0,
+        "median_rel_err": 0.073,
+        "mean_bias": 3237.0,
+        "mean_price": 588214.0
+      },
+      "N-W": {
+        "n": 239,
+        "rmse": 87786.0,
+        "mae": 58349.0,
+        "median_rel_err": 0.085,
+        "mean_bias": 5141.0,
+        "mean_price": 513770.0
+      },
+      "S-C-E": {
+        "n": 280,
+        "rmse": 39752.0,
+        "mae": 29527.0,
+        "median_rel_err": 0.077,
+        "mean_bias": 2563.0,
+        "mean_price": 301451.0
+      },
+      "S-C-W": {
+        "n": 166,
+        "rmse": 45215.0,
+        "mae": 33283.0,
+        "median_rel_err": 0.097,
+        "mean_bias": -3972.0,
+        "mean_price": 279726.0
+      },
+      "S-E": {
+        "n": 212,
+        "rmse": 64719.0,
+        "mae": 42250.0,
+        "median_rel_err": 0.077,
+        "mean_bias": 302.0,
+        "mean_price": 359991.0
+      },
+      "S-W": {
+        "n": 148,
+        "rmse": 81675.0,
+        "mae": 47643.0,
+        "median_rel_err": 0.09,
+        "mean_bias": -900.0,
+        "mean_price": 354235.0
+      }
+    },
+    "has_image": {
+      "false": {
+        "n": 2788,
+        "rmse": 105511.0,
+        "mae": 61638.0,
+        "median_rel_err": 0.085,
+        "mean_bias": -772.0,
+        "mean_price": 540448.0
+      },
+      "true": {
+        "n": 434,
+        "rmse": 92073.0,
+        "mae": 58176.0,
+        "median_rel_err": 0.078,
+        "mean_bias": 2161.0,
+        "mean_price": 534922.0
+      }
+    }
+  },
+  "n_val": 3222
+}

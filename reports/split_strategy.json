@@ -1,0 +1,41 @@
+{
+  "method":"Controlled: same tuned XGBoost + same engineered features; zip_target fitted on each split's training fold only",
+  "tuned_params":{
+    "colsample_bytree":0.7816441089,
+    "learning_rate":0.0870833005,
+    "max_depth":4.0,
+    "min_child_weight":5.0,
+    "n_estimators":535.0,
+    "reg_lambda":3.4211651326,
+    "subsample":0.7760609975
+  },
+  "primary":{
+    "split":"random 80\/20",
+    "train_size":12888,
+    "val_size":3222
+  },
+  "spatial_proximity":{
+    "median_nn_km":0.0937052801,
+    "pct_val_within_1km_of_train":99.565487275,
+    "pct_val_within_10km_of_train":100.0
+  },
+  "robustness":{
+    "random_split":{
+      "rmse":103802.7632,
+      "mse":10775013644.6224994659,
+      "mae":61172.1442,
+      "r2":0.9205
+    },
+    "spatial_split":{
+      "rmse":95432.8824,
+      "mse":9107435035.5016994476,
+      "mae":61862.587,
+      "r2":0.809
+    },
+    "spatial_train_size":15656,
+    "spatial_val_size":454,
+    "r2_delta":-0.1116,
+    "rmse_increase_pct":-8.06,
+    "note":"Random and spatial legs differ ONLY in how train\/validation were split. The gap therefore measures geographic generalisation of the final model, not a model\/feature difference."
+  }
+}

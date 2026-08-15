@@ -1,0 +1,45 @@
+{
+  "phase": "Phase 12",
+  "explains": "ACTUAL evaluated model: ResNet18 partial fine-tune (layer4 + regression head), price target",
+  "val_r2_of_explained_model": 0.2960202776482529,
+  "caveat": "regions are ASSOCIATED with the model's visual prediction; not causal",
+  "samples": [
+    {
+      "id": 3126059023,
+      "price": 3395000,
+      "vision_prediction": 2522696,
+      "file": "gradcam_vision_3126059023.png"
+    },
+    {
+      "id": 3303850390,
+      "price": 2983000,
+      "vision_prediction": 598103,
+      "file": "gradcam_vision_3303850390.png"
+    },
+    {
+      "id": 125069038,
+      "price": 2140000,
+      "vision_prediction": 424736,
+      "file": "gradcam_vision_125069038.png"
+    },
+    {
+      "id": 2114700615,
+      "price": 148000,
+      "vision_prediction": 267163,
+      "file": "gradcam_vision_2114700615.png"
+    },
+    {
+      "id": 111000190,
+      "price": 146000,
+      "vision_prediction": 223654,
+      "file": "gradcam_vision_111000190.png"
+    },
+    {
+      "id": 2123049114,
+      "price": 110700,
+      "vision_prediction": 372302,
+      "file": "gradcam_vision_2123049114.png"
+    }
+  ],
+  "val_rmse_of_explained_model": 297453.22568120214
+}

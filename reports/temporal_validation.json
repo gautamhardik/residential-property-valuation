@@ -1,0 +1,26 @@
+{
+  "method": "Chronological (out-of-time) split; same tuned XGBoost + same engineered features; fold-safe zip_target on train only",
+  "cutoff": "2015-03-01",
+  "train_period": {
+    "start": "2014-05-02",
+    "end": "2015-02-28",
+    "rows": 12554
+  },
+  "val_period": {
+    "start": "2015-03-01",
+    "end": "2015-05-24",
+    "rows": 3556
+  },
+  "spatial_proximity": {
+    "median_nn_km": 0.1000754339800542,
+    "pct_val_within_1km_of_train": 99.49381327334083
+  },
+  "metrics": {
+    "rmse": 117473.9402,
+    "mse": 13800126631.6371,
+    "mae": 70808.5055,
+    "r2": 0.8926
+  },
+  "vs_random_holdout_r2": 0.9205,
+  "r2_delta_vs_random": -0.0279
+}

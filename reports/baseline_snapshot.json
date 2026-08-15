@@ -1,0 +1,31 @@
+{
+  "phase": "Phase 0 \u2014 champion freeze snapshot",
+  "created_for": "DL extension (final research pass)",
+  "champion": {
+    "model_type": "xgboost",
+    "selection": "temporal-generalization tie-break within 1% random-holdout RMSE",
+    "metrics": {
+      "rmse": 103802.7632,
+      "mse": 10775013644.6225,
+      "mae": 61172.1442,
+      "r2": 0.9205
+    },
+    "asserted": "RMSE ~= $103,802.8, R2 ~= 0.9205"
+  },
+  "checksums_sha256_16": {
+    "submission.csv": "fecaf94a0a5e1a6c",
+    "models/deployed/tabular_model.joblib": "b696236af1309ab4",
+    "models/deployed/tabular_pipeline.joblib": "d8d0f38f2ff4e716",
+    "reports/results_multimodal.csv": "000c5eda264f6d87",
+    "reports/results_ensemble.csv": "bf1841a9815a022a",
+    "reports/tuned_best.json": "2cf6d5a0975aa5c2"
+  },
+  "do_not_modify": [
+    "Final XGBoost model",
+    "XGBoost features",
+    "E1-E5 results",
+    "submission.csv",
+    "existing /predict endpoint",
+    "existing validation methodology"
+  ]
+}

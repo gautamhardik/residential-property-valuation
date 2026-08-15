@@ -1,0 +1,20 @@
+{
+  "model_type": "xgboost",
+  "method": "RandomizedSearchCV, 30 iters, 3-fold CV",
+  "selection": "temporal-generalization tie-break within 1% random-holdout RMSE",
+  "params": {
+    "colsample_bytree": 0.7816441089227697,
+    "learning_rate": 0.08708330050798323,
+    "max_depth": 4,
+    "min_child_weight": 5,
+    "n_estimators": 535,
+    "reg_lambda": 3.4211651325607844,
+    "subsample": 0.7760609974958406
+  },
+  "metrics": {
+    "rmse": 103802.7632,
+    "mse": 10775013644.6225,
+    "mae": 61172.1442,
+    "r2": 0.9205
+  }
+}

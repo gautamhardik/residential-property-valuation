@@ -1,0 +1,4 @@
+model,best_params,rmse,mse,mae,r2
+RandomForest_tuned,"{'max_depth': 43, 'max_features': 0.5, 'min_samples_leaf': 1, 'min_samples_split': 2, 'n_estimators': 208}",118909.5119521898,14139472032.707968,66236.82206194515,0.8957126889486167
+XGBoost_tuned,"{'colsample_bytree': np.float64(0.7816441089227697), 'learning_rate': np.float64(0.08708330050798323), 'max_depth': 4, 'min_child_weight': 5, 'n_estimators': 535, 'reg_lambda': np.float64(3.4211651325607844), 'subsample': np.float64(0.7760609974958406)}",103802.76318394655,10775013644.622488,61172.14421118482,0.9205276408524826
+CatBoost_tuned,"{'bagging_temperature': np.float64(1.0793842647781595), 'depth': 4, 'iterations': 366, 'l2_leaf_reg': np.float64(1.4046725484369038), 'learning_rate': np.float64(0.1185392166316497), 'random_strength': np.float64(0.2818484499495253), 'subsample': np.float64(0.9208787923016158)}",103580.18980281652,10728855719.587494,61876.44843728979,0.9208680839662337

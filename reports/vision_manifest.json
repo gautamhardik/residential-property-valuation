@@ -1,0 +1,15 @@
+{
+  "manifest": "C:\\Users\\hiten\\Documents\\Satellite_Property_Valuation\\preprocessed\\vision_manifest.csv",
+  "counts": {
+    "total_rows": 2189,
+    "train_count": 1755,
+    "val_count": 434,
+    "duplicate_property_ids": 0,
+    "train_val_overlap": 0,
+    "missing_images": 0,
+    "invalid_images": 0
+  },
+  "split_matches_e4e5": true,
+  "all_validation_passed": true,
+  "alignment_rule": "tile keyed by property id: images/train/{id}.jpg; validity = exists + decodes + min side >= 200px"
+}

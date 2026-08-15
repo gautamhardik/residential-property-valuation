@@ -1,0 +1,93 @@
+{
+  "project": "King County Satellite Property Valuation",
+  "seed": 42,
+  "canonical_split": "random 80/20 property-id holdout shared by all experiments (preprocessed/split.json)",
+  "phases": [
+    {
+      "phase": "P1 - Data audit & cleaning",
+      "artifact": "reports/data_audit.json",
+      "script": "scripts/data_audit.py",
+      "notes": "16,110 train rows after de-duplication; 5,404 test rows; date parsed to year/quarter."
+    },
+    {
+      "phase": "P2 - Tabular baselines",
+      "artifact": "reports/results_tabular.csv",
+      "script": "scripts/tabular_baselines.py",
+      "notes": "3 families (Linear/RF/XGB) x 3 feature sets (raw/engineered/tuned-style)."
+    },
+    {
+      "phase": "P3 - Hyperparameter tuning",
+      "artifact": "reports/tuned_best.json, reports/results_tuned.csv",
+      "script": "scripts/tune_models.py",
+      "notes": "RandomizedSearchCV 30 iters x 3-fold; fold-safe zip_target via Pipeline; champion selected by temporal-generalization tie-break (not random-RMSE alone)."
+    },
+    {
+      "phase": "P4 - Split-strategy validation",
+      "artifact": "reports/split_strategy.json",
+      "script": "scripts/split_validation.py",
+      "notes": "Controlled random vs spatial splits; random R2 0.9205 vs spatial R2 0.809."
+    },
+    {
+      "phase": "P5 - Temporal (out-of-time) validation",
+      "artifact": "reports/temporal_validation.json",
+      "script": "scripts/temporal_validation.py",
+      "notes": "Train <=2015-02-28, validate 2015-03..05; out-of-time R2 0.8926."
+    },
+    {
+      "phase": "P6 - Broader model space & stacking",
+      "artifact": "reports/results_ensemble.csv",
+      "script": "scripts/ensemble_experiment.py",
+      "notes": "XGBoost vs CatBoost vs LightGBM vs OOF-Ridge stack; blend best on random holdout but champion kept XGBoost for generalization."
+    },
+    {
+      "phase": "P7 - Multimodal (satellite)",
+      "artifact": "reports/results_multimodal.csv",
+      "script": "scripts/multimodal_experiment.py",
+      "notes": "Frozen ResNet18/50 embeddings did not beat tabular control (E5 R2 0.844 vs E4 0.872)."
+    },
+    {
+      "phase": "P8 - Error analysis",
+      "artifact": "reports/error_analysis.json",
+      "script": "scripts/error_analysis.py",
+      "notes": "Errors concentrate in luxury/waterfront; cheap homes overpredicted."
+    },
+    {
+      "phase": "P9 - Interpretability",
+      "artifact": "reports/shap_summary.json, reports/figures/",
+      "script": "scripts/shap_analysis.py, scripts/legacy/gradcam.py (superseded by scripts/phase12_gradcam.py)",
+      "notes": "SHAP (TreeExplainer) on champion; Grad-CAM labelled as an image proxy, not final prediction."
+    },
+    {
+      "phase": "P10 - Final model & submission",
+      "artifact": "reports/final_model.json, predictions/submission.csv, models/deployed/",
+      "script": "scripts/final_model.py",
+      "notes": "Retrained tuned XGBoost on all 16,110 clean rows; 5,404 predictions."
+    },
+    {
+      "phase": "P11 - DL extension: canonical vision split & manifest",
+      "artifact": "preprocessed/vision_manifest.csv, reports/baseline_snapshot.json",
+      "script": "scripts/phase0_freeze.py, scripts/phase1_manifest.py",
+      "notes": "Champion frozen (RMSE $103,802.8 / R2 0.9205). Canonical 1,755 train / 434 val image-covered split; no duplicates, no overlap, image alignment validated."
+    },
+    {
+      "phase": "P12 - DL extension: Experiment A (trainable head) + B (layer4 fine-tune)",
+      "artifact": "reports/results_dl.json, reports/results_dl_serialization.json, models/vision/phase2/head_A1_price.pt, models/vision/phase2/head_A2_log1p.pt, models/deployed/vision_price.pt",
+      "script": "scripts/phase2_experiment_a.py, scripts/phase8_serialize.py",
+      "notes": "A1 (price, R2 0.099) and A2 (log-price, R2 0.113) on frozen ResNet18; B partial layer4 fine-tune R2 0.296. Decision gate fired Case 1 (STOP): training a visual head did not approach the tabular control (E4 R2 0.872). E6 fusion NOT executed."
+    },
+    {
+      "phase": "P13 - DL extension: fair evaluation, final table, conclusion",
+      "artifact": "reports/results_dl_final.json, reports/results_dl_eval.json",
+      "script": "scripts/phase3_4_eval_gate.py, scripts/phase13_14_final_table.py",
+      "notes": "All DL rows on the SAME 434 image-covered val (E4 0.872 / E5 0.844 / A1 0.099 / A2 0.113 / B 0.296). Outcome A: task-specific visual learning adds no measurable value; XGBoost remains champion; vision model served ONLY as a labelled secondary research service."
+    }
+  ],
+  "champion": {
+    "model_type": "xgboost",
+    "random_holdout_rmse": 103802.8,
+    "random_holdout_r2": 0.9205,
+    "temporal_r2": 0.8926,
+    "spatial_r2": 0.8090,
+    "selection_rationale": "Chosen over CatBoost (random R2 0.9209) because it generalises decisively better out-of-time (0.893 vs 0.881) and spatially (0.809 vs 0.598)."
+  }
+}

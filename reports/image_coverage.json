@@ -1,0 +1,10 @@
+{
+  "properties": 16110,
+  "images_available": 2189,
+  "images_valid": 2189,
+  "images_missing": 13921,
+  "images_invalid": 0,
+  "coverage_pct": 13.59,
+  "files_not_in_manifest": 0,
+  "manifest_ids_are_unique": true
+}

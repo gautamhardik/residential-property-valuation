@@ -1,0 +1,54 @@
+{
+  "phase": "Phases 3-4 \u2014 fair evaluation + decision gate",
+  "scope": "ONLY the 434 image-covered validation properties (same ids as E4/E5)",
+  "table": [
+    {
+      "experiment": "E4",
+      "model": "XGBoost (champion)",
+      "input": "Tabular",
+      "rmse": 126792.09431119268,
+      "r2": 0.8720892236710663,
+      "mae": 68134.33343533987
+    },
+    {
+      "experiment": "E5",
+      "model": "XGBoost (champion)",
+      "input": "Tabular + frozen ResNet emb.",
+      "rmse": 139807.697474577,
+      "r2": 0.8444804644889159,
+      "mae": 74298.88076036866
+    },
+    {
+      "experiment": "A1",
+      "model": "ResNet18 + trained head",
+      "input": "Image (frozen backbone)",
+      "rmse": 336577.6193946937,
+      "r2": 0.0986504367590264,
+      "mae": 220224.50640841015
+    },
+    {
+      "experiment": "A2",
+      "model": "ResNet18 + trained head (log-price)",
+      "input": "Image (frozen backbone)",
+      "rmse": 333962.45807973115,
+      "r2": 0.11260274323820896,
+      "mae": 205011.53967453918
+    }
+  ],
+  "decision_gate": {
+    "e4_r2": 0.8720892236710663,
+    "best_experiment_a_r2": 0.11260274323820896,
+    "decision": "Case 1 \u2014 STOP (vision clearly underperforms)",
+    "interpretation": "Experiment A (trainable regression head on a frozen ImageNet ResNet18) reaches R2 0.113 on the same 434 validation properties where the tabular control reaches R2 0.872. The task-trained visual head does not recover valuation signal that frozen embeddings missed; both are far below the tabular champion."
+  },
+  "production_benchmark": {
+    "note": "OVERALL PRODUCTION BENCHMARK, measured on all 16,110 properties (not the 434 image subset) \u2014 do not compare directly with the table above.",
+    "metrics": {
+      "rmse": 103802.7632,
+      "mse": 10775013644.6225,
+      "mae": 61172.1442,
+      "r2": 0.9205
+    }
+  },
+  "conclusion_case_1": "Task-specific training did not recover useful visual valuation signal from the available satellite imagery. STOP. This is a successful negative experiment."
+}

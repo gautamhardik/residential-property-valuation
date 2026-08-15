@@ -1,0 +1,35 @@
+{
+  "train_shape": [
+    16209,
+    23
+  ],
+  "test_shape": [
+    5404,
+    22
+  ],
+  "train_duplicate_ids": 99,
+  "test_duplicate_ids": 8,
+  "duplicate_ids_identical_rows": 0,
+  "duplicate_ids_vary_somehow": 99,
+  "train_test_overlap_ids": 70,
+  "overlap_same_attributes": 70,
+  "overlap_different_attributes": 0,
+  "train_valid_lat_frac": 1.0,
+  "train_valid_lon_frac": 1.0,
+  "train_nan_coords": 0,
+  "train_duplicate_coordinate_pairs": 360,
+  "test_valid_lat_frac": 1.0,
+  "test_valid_lon_frac": 1.0,
+  "test_nan_coords": 0,
+  "test_duplicate_coordinate_pairs": 47,
+  "price_in_test": false,
+  "train_sale_year_range": [
+    2014,
+    2015
+  ],
+  "test_sale_year_range": [
+    2014,
+    2015
+  ],
+  "decision_summary": "Duplicate ids in train represent repeat sales of the same property; kept the most recent transaction (99 duplicates -> one row each). Overlapping train/test ids are the same property; because test carries no labels this cannot leak the target, it only allows benign memorization. The full cleaned frames are cached as parquet/pkl for later phases. Coordindates all valid. date parsed into sale_year/sale_quarter and retained as a market-drift feature."
+}

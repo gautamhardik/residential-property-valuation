@@ -1,0 +1,97 @@
+{
+  "covered_n": 2189,
+  "noncovered_n": 13921,
+  "coverage_pct": 13.59,
+  "sample_type": "convenience sample (Mapbox fetch in row order, 429/rate-limit filtered)",
+  "comparisons": {
+    "price": {
+      "covered_mean": 537960.14,
+      "noncovered_mean": 538606.7,
+      "covered_median": 443500.0,
+      "noncovered_median": 451000.0,
+      "diff": -646.56,
+      "cohens_d": -0.008,
+      "p_value": 0.7441290181332523
+    },
+    "grade": {
+      "covered_mean": 7.62,
+      "noncovered_mean": 7.66,
+      "covered_median": 7.0,
+      "noncovered_median": 7.0,
+      "diff": -0.05,
+      "cohens_d": -0.039,
+      "p_value": 0.09433369373320087
+    },
+    "sqft_living": {
+      "covered_mean": 2066.51,
+      "noncovered_mean": 2076.81,
+      "covered_median": 1910.0,
+      "noncovered_median": 1910.0,
+      "diff": -10.3,
+      "cohens_d": -0.011,
+      "p_value": 0.6184394074016234
+    },
+    "sqft_lot": {
+      "covered_mean": 19479.51,
+      "noncovered_mean": 14151.77,
+      "covered_median": 8001.0,
+      "noncovered_median": 7521.0,
+      "diff": 5327.74,
+      "cohens_d": 0.137,
+      "p_value": 2.863760635425229e-07
+    },
+    "bathrooms": {
+      "covered_mean": 2.11,
+      "noncovered_mean": 2.12,
+      "covered_median": 2.25,
+      "noncovered_median": 2.25,
+      "diff": -0.01,
+      "cohens_d": -0.014,
+      "p_value": 0.5390861245416443
+    },
+    "lat": {
+      "covered_mean": 47.56,
+      "noncovered_mean": 47.56,
+      "covered_median": 47.57,
+      "noncovered_median": 47.57,
+      "diff": -0.0,
+      "cohens_d": -0.01,
+      "p_value": 0.6641463107822141
+    },
+    "long": {
+      "covered_mean": -122.21,
+      "noncovered_mean": -122.21,
+      "covered_median": -122.22,
+      "noncovered_median": -122.23,
+      "diff": 0.0,
+      "cohens_d": 0.005,
+      "p_value": 0.8175847021472387
+    },
+    "waterfront": {
+      "covered_prop": 0.0087,
+      "noncovered_prop": 0.0068,
+      "diff": 0.0019,
+      "z": 0.918,
+      "p_value": 0.3588629507992729
+    },
+    "zipcode": {
+      "covered_unique_zips": 70,
+      "noncovered_unique_zips": 70,
+      "covered_top5": {
+        "98034": 87,
+        "98052": 67,
+        "98038": 67,
+        "98058": 67,
+        "98042": 67
+      },
+      "noncovered_top5": {
+        "98103": 402,
+        "98115": 386,
+        "98038": 379,
+        "98117": 373,
+        "98052": 362
+      }
+    }
+  },
+  "interpretation": "Effect sizes (Cohen's d) below ~0.2 are negligible; the groups differ appreciably when |d| >= 0.2-0.5. Always contrast with the satellite experiment (which is internally fair: same subset, same split, same model)."
+}

@@ -1,0 +1,65 @@
+{
+  "phase": "Phases 13-14 \u2014 final experiment table",
+  "section": "E4/E5/A1/A2/B rows measured on the SAME 434 image-covered validation properties (1,755-train image-covered subset). The Production row is a DIFFERENT population: the full 16,110-property random holdout \u2014 never compare it directly to the 434-row experiments.",
+  "table": [
+    {
+      "exp": "E4",
+      "model": "XGBoost (champion)",
+      "input": "Tabular",
+      "rmse": 126792.09431119268,
+      "r2": 0.8720892236710663,
+      "source": "reports/results_multimodal.csv (E4_tabular_only, XGB)"
+    },
+    {
+      "exp": "E5",
+      "model": "XGBoost (champion)",
+      "input": "Tabular + frozen ResNet emb.",
+      "rmse": 139807.697474577,
+      "r2": 0.8444804644889159,
+      "source": "reports/results_multimodal.csv (E5_mm_rn18, XGB)"
+    },
+    {
+      "exp": "A1",
+      "model": "ResNet18 + trained head",
+      "input": "Image",
+      "rmse": 336577.6193946937,
+      "r2": 0.0986504367590264,
+      "source": "reports/results_dl.json (A1_price_MSE, best epoch)"
+    },
+    {
+      "exp": "A2",
+      "model": "ResNet18 + trained head (log-price)",
+      "input": "Image",
+      "rmse": 333962.45807973115,
+      "r2": 0.11260274323820896,
+      "source": "reports/results_dl.json (A2_log1p_MSE, best epoch)"
+    },
+    {
+      "exp": "B",
+      "model": "ResNet18 partial fine-tune (layer4)",
+      "input": "Image",
+      "rmse": 297453.22568120214,
+      "r2": 0.2960202776482529,
+      "source": "reports/results_dl_serialization.json (PyTorch on 434 val)"
+    },
+    {
+      "exp": "Production",
+      "model": "Tuned XGBoost (champion)",
+      "input": "Full engineered tabular + geospatial (all 16,110)",
+      "rmse": 103802.7632,
+      "r2": 0.9205,
+      "source": "reports/tuned_best.json (random 80/20 holdout, n=3,222)"
+    }
+  ],
+  "production_benchmark_note": "Full-dataset champion (all 16,110 properties, random 80/20 holdout of 3,222): RMSE $103,802.8, R2 0.9205. Different population; not directly comparable to the E4/E5/A1/A2/B rows.",
+  "conclusion": {
+    "outcome": "OUTCOME A \u2014 the DL negative result stands.",
+    "summary": "Frozen ImageNet embeddings failed to improve valuation (E4 0.872 -> E5 0.844). Training a task-specific ResNet18 regression head (A1 0.099 / A2 0.113) also failed to recover meaningful visual signal. The only model that measurably moved visual information was a partial fine-tune of layer4 (B, R2 0.296), yet it still trails the tabular control (0.872) by a wide margin.",
+    "scientific_statement": "Under the available satellite coverage (2,189 of 16,110 properties, 13.6%) and single-tile 256px imagery, the visual modality provides limited incremental information beyond the structured/geospatial features. Representation learning narrows the frozen-embedding gap but does not approach the tabular signal.",
+    "decision": "XGBoost remains the production champion. The vision model is deployed ONLY as a clearly-labelled secondary research service.",
+    "e6": {
+      "executed": false,
+      "reason": "Phase 4 decision gate fired CASE 1 (Experiment A R2 0.113 vs E4 0.872). Fusion with a task-trained embedding was not warranted; the goal was to determine whether task-specific visual learning adds value, and Experiment A already answered that it does not."
+    }
+  }
+}

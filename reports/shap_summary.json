@@ -1,0 +1,91 @@
+{
+  "overall": {
+    "rmse": 103802.76318394655,
+    "mse": 10775013644.622488,
+    "mae": 61172.14421118482,
+    "r2": 0.9205276408524826
+  },
+  "top_features": [
+    {
+      "feature": "zip_target",
+      "mean_abs_shap": 78038.4375
+    },
+    {
+      "feature": "grade",
+      "mean_abs_shap": 62199.30078125
+    },
+    {
+      "feature": "sqft_living",
+      "mean_abs_shap": 50940.15625
+    },
+    {
+      "feature": "dist_to_center_km",
+      "mean_abs_shap": 48244.265625
+    },
+    {
+      "feature": "lat",
+      "mean_abs_shap": 26807.10546875
+    },
+    {
+      "feature": "view",
+      "mean_abs_shap": 15931.14453125
+    },
+    {
+      "feature": "lat_long_interaction",
+      "mean_abs_shap": 15329.6435546875
+    },
+    {
+      "feature": "sqft_living15",
+      "mean_abs_shap": 15002.29296875
+    },
+    {
+      "feature": "sqft_above",
+      "mean_abs_shap": 14778.55859375
+    },
+    {
+      "feature": "condition",
+      "mean_abs_shap": 12630.5751953125
+    },
+    {
+      "feature": "sale_year",
+      "mean_abs_shap": 12204.51953125
+    },
+    {
+      "feature": "sqft_lot",
+      "mean_abs_shap": 11906.28125
+    },
+    {
+      "feature": "yr_built",
+      "mean_abs_shap": 9952.64453125
+    },
+    {
+      "feature": "total_sqft",
+      "mean_abs_shap": 8181.2314453125
+    },
+    {
+      "feature": "lot_living_ratio",
+      "mean_abs_shap": 7655.78173828125
+    },
+    {
+      "feature": "sqft_basement",
+      "mean_abs_shap": 7520.98095703125
+    },
+    {
+      "feature": "long",
+      "mean_abs_shap": 7086.66357421875
+    },
+    {
+      "feature": "waterfront",
+      "mean_abs_shap": 6440.15673828125
+    },
+    {
+      "feature": "bathrooms",
+      "mean_abs_shap": 6425.06982421875
+    },
+    {
+      "feature": "living_per_bedroom",
+      "mean_abs_shap": 5268.080078125
+    }
+  ],
+  "n_sampled": 300
+}

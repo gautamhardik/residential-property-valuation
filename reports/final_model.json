@@ -1,0 +1,14 @@
+{
+  "final_model": "XGBoost tuned (champion), engineered tabular features",
+  "train_rows": 16110,
+  "test_rows": 5404,
+  "submission_rows": 5404,
+  "duplicate_ids_in_test": 8,
+  "missing_predictions": 0,
+  "submission": "predictions\\submission.csv",
+  "prediction_stats": {
+    "min": 132633.84375,
+    "mean": 547215.9375,
+    "max": 5230999.0
+  }
+}

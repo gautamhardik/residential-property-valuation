@@ -1,0 +1,45 @@
+# --- Secrets ---
+.env
+
+# --- Data (large binaries) ---
+data/*.xlsx
+data/*.csv
+
+# --- Transient training caches ---
+catboost_info/
+lightgbm*.txt
+predicted_vs_actual*.csv
+*sample_predictions.csv
+*final_predictions.csv
+
+# --- Downloaded satellite imagery ---
+images/train/
+images/test/
+images/train_sample/
+images/train_full/
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+*.egg-info/
+.pytest_cache/
+.coverage
+
+# --- Local execution logs ---
+*.log
+logs/
+
+# --- Notebooks / outputs ---
+.ipynb_checkpoints/
+
+# --- Jupyter / IDE ---
+.vscode/
+.idea/
+*.pyc
+
+# --- OS junk ---
+Thumbs.db
+.DS_Store
