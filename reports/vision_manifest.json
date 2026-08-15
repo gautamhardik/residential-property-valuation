@@ -1,5 +1,5 @@
 {
-  "manifest": "C:\\Users\\hiten\\Documents\\Satellite_Property_Valuation\\preprocessed\\vision_manifest.csv",
+  "manifest": "preprocessed/vision_manifest.csv",
   "counts": {
     "total_rows": 2189,
     "train_count": 1755,

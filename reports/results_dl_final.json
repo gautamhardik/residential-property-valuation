@@ -54,12 +54,14 @@
   "production_benchmark_note": "Full-dataset champion (all 16,110 properties, random 80/20 holdout of 3,222): RMSE $103,802.8, R2 0.9205. Different population; not directly comparable to the E4/E5/A1/A2/B rows.",
   "conclusion": {
     "outcome": "OUTCOME A \u2014 the DL negative result stands.",
-    "summary": "Frozen ImageNet embeddings failed to improve valuation (E4 0.872 -> E5 0.844). Training a task-specific ResNet18 regression head (A1 0.099 / A2 0.113) also failed to recover meaningful visual signal. The only model that measurably moved visual information was a partial fine-tune of layer4 (B, R2 0.296), yet it still trails the tabular control (0.872) by a wide margin.",
+    "summary": "Frozen ImageNet embeddings failed to improve valuation (E4 0.872 -> E5 0.844). Training a task-specific ResNet18 regression head (A1 0.099 / A2 0.113) also failed to recover meaningful visual signal. The only model that measurably moved visual information was a partial fine-tune of layer4 (B, R2 0.296), yet it still trails the tabular control (0.872) by a wide margin. Parallel representation checks (E6 DINOv2-vits14 fusion R2 0.9117 vs 0.9203; PCA-ablated embeddings, best tabular variant 0.8634 vs 0.8721 control) also failed to beat the tabular baseline; the negative result is robust across representations.",
     "scientific_statement": "Under the available satellite coverage (2,189 of 16,110 properties, 13.6%) and single-tile 256px imagery, the visual modality provides limited incremental information beyond the structured/geospatial features. Representation learning narrows the frozen-embedding gap but does not approach the tabular signal.",
-    "decision": "XGBoost remains the production champion. The vision model is deployed ONLY as a clearly-labelled secondary research service.",
+    "decision": "XGBoost remains the production champion. The vision model is archived as research evidence only and is not exposed in the production app (no vision prediction endpoint exists).",
     "e6": {
-      "executed": false,
-      "reason": "Phase 4 decision gate fired CASE 1 (Experiment A R2 0.113 vs E4 0.872). Fusion with a task-trained embedding was not warranted; the goal was to determine whether task-specific visual learning adds value, and Experiment A already answered that it does not."
+      "executed": true,
+      "variant": "tabular + DINOv2-vits14 frozen embeddings (reports/results_dinov2_fusion.json)",
+      "r2": 0.9116874600490137,
+      "reason": "An E6 fusion with DINOv2-vits14 embeddings was executed and degraded the tabular control (R2 0.9203 -> 0.9117), reproducing the frozen-embedding negative result with a second representation. The planned E6 with a task-trained embedding was additionally gated after Experiment A (R2 0.113 vs E4 0.872)."
     }
   }
 }

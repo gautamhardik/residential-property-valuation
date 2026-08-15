@@ -79,7 +79,7 @@ def main():
     checks["all_expected"] = all(checks[k] == v for k, v in expected.items())
 
     summary = {
-        "manifest": str(out),
+        "manifest": str(out.relative_to(Path(__file__).resolve().parents[1])),
         "counts": {k: checks[k] for k in
                    ("total_rows", "train_count", "val_count",
                     "duplicate_property_ids", "train_val_overlap",

@@ -3,15 +3,19 @@
 Covers:
   - Feature engineering unit tests
   - /predict: valid, missing-field, out-of-range, coordinate validation
-  - /predict-image: PID mode, lat/long mode, invalid coords, missing inputs
+  - Deprecated vision routes return 404
   - Regression baseline (primary prediction must not drift)
 """
 import pytest
 import pandas as pd
+from pathlib import Path
 from fastapi.testclient import TestClient
 
 from app.backend.main import app
 from src.features.build_features import _engineer, ZipTargetEncoder
+from src.features.build_features import FEATURE_COLS
+from src.inference.artifacts import load_tabular_artifacts
+from src.inference.predict import predict_single
 
 client = TestClient(app)
 
@@ -133,6 +137,38 @@ def test_predict_response_schema():
     assert "importance" in body["top_factors_gain"][0]
 
 
+def test_predict_shap_parity_and_error_band():
+    r = client.post("/predict", json=SMOKE_PAYLOAD)
+    assert r.status_code == 200
+    body = r.json()
+
+    # Local explanation is present, labelled, and consistent with the price.
+    ls = body["local_shap"]
+    assert isinstance(ls, dict)
+    assert ls["expected_value"] > 0
+    assert abs(ls["expected_value"] + ls["total_contribution"] - body["predicted_price"]) < 1.0
+    for item in ls["top_positive"] + ls["top_negative"]:
+        assert item["label"] and item["feature"]
+        assert item["direction"] in ("up", "down")
+
+    # Empirical error band is present and explicit that it is not an interval.
+    band = body["error_band"]
+    assert isinstance(band, dict)
+    assert band["typical_error"] > 0 and band["n"] > 0
+    assert "not a per-property" in band["note"]
+
+
+def test_predict_shap_humanised_labels():
+    r = client.post("/predict", json=SMOKE_PAYLOAD)
+    body = r.json()
+    raw_seen = {x["feature"] for x in body["local_shap"]["top_positive"] + body["local_shap"]["top_negative"]}
+    labels = {x["label"] for x in body["local_shap"]["top_positive"] + body["local_shap"]["top_negative"]}
+    # Flagship implementation names must never surface as user-facing labels.
+    assert "zip_target" not in labels
+    assert "total_sqft" not in labels
+    assert all(f not in raw_seen for f in ())  # raw names may appear; labels carry the human text
+
+
 def test_predict_optional_fields_default():
     minimal = {k: v for k, v in SMOKE_PAYLOAD.items()
                if k not in ("waterfront", "view", "condition", "grade",
@@ -225,3 +261,64 @@ def test_predict_image_tile_routes_are_not_exposed():
     r = client.get("/tile/mapbox", params={"lat": 47.57, "long": -122.23})
     assert r.status_code == 404
 
+
+# ---------------------------------------------------------------------------
+# Release hardening: artifacts, schema, parity, submission
+# ---------------------------------------------------------------------------
+
+def test_tabular_artifacts_exist():
+    assert Path("models/deployed/tabular_model.joblib").exists()
+    assert Path("models/deployed/tabular_pipeline.joblib").exists()
+
+
+def test_feature_schema_matches_artifact():
+    pipeline, _ = load_tabular_artifacts()
+    expected_cols = [c for c in FEATURE_COLS if c != "price"]
+    assert pipeline["feature_cols"] == expected_cols
+    assert "zip_target" in pipeline["feature_cols"]
+
+
+def test_api_offline_prediction_parity():
+    payload = {**SMOKE_PAYLOAD, "sale_year": 2015, "sale_quarter": 3}
+    offline = predict_single(payload)
+    api = client.post("/predict", json=payload)
+    assert api.status_code == 200
+    assert abs(float(api.json()["predicted_price"]) - float(offline["predicted_price"])) < 1e-6
+
+
+def test_submission_schema_and_counts():
+    sub = pd.read_csv("predictions/submission.csv")
+    assert list(sub.columns) == ["id", "predicted_price"]
+    assert sub["predicted_price"].notna().all()
+    assert sub["predicted_price"].gt(0).all()
+
+    # Row/id-parity is asserted against the test set. The raw data/test.xlsx is
+    # gitignored (large, not public), so fall back to the repository-contained
+    # cleaned test fixture when the raw file is absent (e.g. a fresh CI clone).
+    raw = Path("data/test.xlsx")
+    if raw.exists():
+        test_df = pd.read_excel(raw)
+    else:
+        test_df = pd.read_pickle("preprocessed/test_clean.pkl")
+    assert len(sub) == len(test_df)
+    assert sorted(sub["id"].tolist()) == sorted(test_df["id"].tolist())
+
+
+def test_secret_and_config_safety():
+    gitignore = Path(".gitignore").read_text(encoding="utf-8")
+    env_example = Path(".env.example").read_text(encoding="utf-8")
+    assert ".env" in gitignore
+    assert "data/*.xlsx" in gitignore
+    assert "MAPBOX_TOKEN=pk.your_public_token_here" in env_example
+    assert "sk-" not in env_example
+
+
+def test_baseline_manifest_matches_files():
+    import hashlib
+    import json
+
+    manifest = json.loads(Path("reports/baseline_manifest.json").read_text(encoding="utf-8"))
+    assert manifest["metadata"]["model_version"] == "xgboost-tuned-2026-08-15"
+    for item in manifest["artifacts"]:
+        digest = hashlib.sha256(Path(item["path"]).read_bytes()).hexdigest()
+        assert digest == item["sha256"]

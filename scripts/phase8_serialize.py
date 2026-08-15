@@ -33,6 +33,8 @@ from src.config import RANDOM_STATE, REPORTS_DIR, MODELS_DIR
 from src.data.load import load_clean_train, canonical_split
 from src.satellite.align import is_valid_image, image_path_for
 from src.satellite.embeddings import load_cache
+
+ROOT = Path(__file__).resolve().parents[1]
 from src.models.train import evaluate
 
 DEVICE = "cpu"
@@ -251,7 +253,7 @@ def main():
     print("Saved", jit_path)
 
     (REPORTS_DIR / "results_dl_serialization.json").write_text(
-        json.dumps({"phase": "Phase 8", "artifacts": {"torchscript": str(jit_path)},
+        json.dumps({"phase": "Phase 8", "artifacts": {"torchscript": str(jit_path.relative_to(ROOT))},
                     "model": "ResNet18 layer4 partial fine-tune + regression head",
                     "verification": verification}, indent=2, default=float), encoding="utf-8")
 

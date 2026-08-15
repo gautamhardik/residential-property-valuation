@@ -214,12 +214,13 @@ def main():
 
     out = Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)
+    root = Path(__file__).resolve().parents[1]
     out.write_text(json.dumps({
         "phase": f"Phase 2 — Experiment A (trainable regression head, frozen {args.encoder})",
         "split": {"covered_train": int(len(tr)), "covered_val": int(len(va))},
         "encoder": args.encoder,
         "variants": records,
-        "checkpoint_dir": str(ckpt_dir),
+        "checkpoint_dir": str(ckpt_dir.relative_to(root)),
     }, indent=2), encoding="utf-8")
     print("\nSaved", out)
 

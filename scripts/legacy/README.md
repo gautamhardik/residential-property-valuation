@@ -9,7 +9,7 @@ unchanged against the current package layout.
 |---|---|
 | `finetune_cnn.py` | `scripts/phase2_experiment_a.py` (Experiment A) + `scripts/phase8_serialize.py` (Experiment B) |
 | `image_subset_compare.py` | `scripts/phase3_4_eval_gate.py` (fair E4/E5/A1/A2 eval) |
-| `predict_image.py` | `app/cli.py --pid/--image` and `app/backend/main.py /predict-image` |
+| `predict_image.py` | Historical vision-only CLI / research artifact (not part of the live app) |
 | `gradcam.py` | `scripts/phase12_gradcam.py` (Grad-CAM on the actual evaluated model) |
 
 Treat anything under this directory as historical evidence, not living code.

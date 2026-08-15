@@ -32,8 +32,12 @@ def main():
     ser = load_serialization()
     b_price = ser["verification"]
 
-    # B (partial fine-tune) is the executed prior model; E6 was NOT executed
-    # (the Phase 4 decision gate fired Case 1 before fusion was warranted).
+    # B (partial fine-tune) is the executed prior model. The planned E6
+    # (tabular + task-trained greenfield embedding) was stopped by the Phase 4
+    # gate, but E6 (tabular + DINOv2-vits14 embeddings) and PCA-ablated
+    # embeddings WERE executed as separate representation checks; both degraded
+    # the tabular control, so the negative result is representation-robust. See
+    # reports/results_dinov2_fusion.json and reports/results_multimodal_pca.csv.
     rows = [
         # executed experiments, all on the SAME 434 image-covered validation rows
         {"exp": "E4", "model": "XGBoost (champion)", "input": "Tabular",
@@ -65,13 +69,19 @@ def main():
     }
     table = pd.concat([table, pd.DataFrame([prod])], ignore_index=True)
 
-    # E6 (tabular + task-trained embeddings) was NOT executed: gate stopped before it.
+    # E6 (tabular + DINOv2-vits14 frozen embeddings) WAS executed as a separate
+    # representation check and degraded the model (R2 0.9117 vs 0.9203 tabular on
+    # the DINOv2-covered split, reports/results_dinov2_fusion.json). The planned
+    # E6 with a TASK-TRAINED embedding was stopped by the gate.
     e6_decision = {
-        "executed": False,
-        "reason": "Phase 4 decision gate fired CASE 1 (Experiment A R2 0.113 vs E4 "
-                  "0.872). Fusion with a task-trained embedding was not warranted; "
-                  "the goal was to determine whether task-specific visual learning "
-                  "adds value, and Experiment A already answered that it does not.",
+        "executed": True,
+        "variant": "tabular + DINOv2-vits14 frozen embeddings (reports/results_dinov2_fusion.json)",
+        "r2": 0.9116874600490137,
+        "reason": "An E6 fusion with DINOv2-vits14 embeddings was executed and degraded "
+                  "the tabular control (R2 0.9203 -> 0.9117), reproducing the frozen-"
+                  "embedding negative result with a second representation. The planned "
+                  "E6 with a task-trained embedding was additionally gated after "
+                  "Experiment A (R2 0.113 vs E4 0.872).",
     }
 
     conclusion = {
@@ -82,7 +92,10 @@ def main():
             "(A1 0.099 / A2 0.113) also failed to recover meaningful visual signal. "
             "The only model that measurably moved visual information was a partial "
             "fine-tune of layer4 (B, R2 0.296), yet it still trails the tabular "
-            "control (0.872) by a wide margin."
+            "control (0.872) by a wide margin. Parallel representation checks "
+            "(E6 DINOv2-vits14 fusion R2 0.9117 vs 0.9203; PCA-ablated embeddings, "
+            "best tabular variant 0.8634 vs 0.8721 control) also failed to beat the "
+            "tabular baseline; the negative result is robust across representations."
         ),
         "scientific_statement": (
             "Under the available satellite coverage (2,189 of 16,110 properties, 13.6%) "
@@ -92,7 +105,8 @@ def main():
             "approach the tabular signal."
         ),
         "decision": "XGBoost remains the production champion. The vision model is "
-                    "deployed ONLY as a clearly-labelled secondary research service.",
+                    "archived as research evidence only and is not exposed in the "
+                    "production app (no vision prediction endpoint exists).",
         "e6": e6_decision,
     }
 

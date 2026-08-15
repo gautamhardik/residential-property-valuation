@@ -1,4 +1,4 @@
-"""Deployment CLI for the vision experiment model (secondary research service).
+"""Historical research CLI for the vision experiment model (archived, not served).
 
 Loads the persisted torch.jit artifact (models/deployed/vision_price.pt) and
 predicts a property price from its satellite tile. The jit model bakes in the

@@ -73,13 +73,13 @@
       "phase": "P12 - DL extension: Experiment A (trainable head) + B (layer4 fine-tune)",
       "artifact": "reports/results_dl.json, reports/results_dl_serialization.json, models/vision/phase2/head_A1_price.pt, models/vision/phase2/head_A2_log1p.pt, models/deployed/vision_price.pt",
       "script": "scripts/phase2_experiment_a.py, scripts/phase8_serialize.py",
-      "notes": "A1 (price, R2 0.099) and A2 (log-price, R2 0.113) on frozen ResNet18; B partial layer4 fine-tune R2 0.296. Decision gate fired Case 1 (STOP): training a visual head did not approach the tabular control (E4 R2 0.872). E6 fusion NOT executed."
+      "notes": "A1 (price, R2 0.099) and A2 (log-price, R2 0.113) on frozen ResNet18; B partial layer4 fine-tune R2 0.296. Decision gate fired Case 1 (STOP): training a visual head did not approach the tabular control (E4 R2 0.872). Parallel representation checks were also executed and recorded in P13: E6 (tabular + DINOv2-vits14 embeddings, R2 0.9117 vs 0.9203) and PCA-ablated embeddings (best tabular variant 0.8634 vs 0.8721) — mirrors of the same frozen-embedding negative result."
     },
     {
       "phase": "P13 - DL extension: fair evaluation, final table, conclusion",
-      "artifact": "reports/results_dl_final.json, reports/results_dl_eval.json",
-      "script": "scripts/phase3_4_eval_gate.py, scripts/phase13_14_final_table.py",
-      "notes": "All DL rows on the SAME 434 image-covered val (E4 0.872 / E5 0.844 / A1 0.099 / A2 0.113 / B 0.296). Outcome A: task-specific visual learning adds no measurable value; XGBoost remains champion; vision model served ONLY as a labelled secondary research service."
+      "artifact": "reports/results_dl_final.json, reports/results_dl_eval.json, reports/results_dinov2_fusion.json, reports/results_multimodal_pca.csv",
+      "script": "scripts/phase3_4_eval_gate.py, scripts/phase13_14_final_table.py, scripts/dinov2_fusion_experiment.py, scripts/multimodal_pca.py",
+      "notes": "All DL rows on the SAME 434 image-covered val (E4 0.872 / E5 0.844 / A1 0.099 / A2 0.113 / B 0.296). Outcome A: task-specific visual learning adds no measurable value; XGBoost remains champion; vision model is archived as research evidence only and is not exposed in the production app."
     }
   ],
   "champion": {

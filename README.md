@@ -1,7 +1,7 @@
-# Satellite Property Valuation
+# Property Valuation with Satellite Imagery Analysis
 
-**A controlled multimodal regression study** investigating whether satellite imagery improves
-residential property-price prediction beyond structured housing and geospatial features.
+**An end-to-end data science study testing whether satellite imagery adds predictive signal to
+residential property valuation.**
 
 | | |
 |---|---|
@@ -12,15 +12,22 @@ residential property-price prediction beyond structured housing and geospatial f
 
 **Quick answers**
 
-- **What?** A property-valuation system + multimodal experiment for King County, WA.
+- **What?** A property-valuation system for King County, WA plus a satellite-imagery research branch.
 - **Why?** To test whether satellite imagery adds predictive information beyond
   housing/geospatial features.
 - **What worked?** Engineered tabular + geospatial features → tuned XGBoost (RMSE \$103.8K, R² 0.921).
 - **What didn't?** Frozen embeddings and task-trained ResNet18 visual models (best R² 0.296 vs the
   tabular control 0.872 on the same validation rows).
-- **What is deployed?** XGBoost as the only production inference path. The ResNet18 vision work
-  remains documented as a research experiment and archived in the project notes; it is not exposed
-  through the production app.
+- **What is deployed?** XGBoost as the only production inference path. The satellite / ResNet18 work
+  remains documented as research only and is not exposed through the production app.
+
+---
+
+## Authoritative artifacts
+
+The project keeps one canonical file per final deliverable in `reports/ARTIFACT_GUIDE.md`.
+Use that guide when you want the exact final model, metrics, split validation, SHAP, error analysis,
+satellite research result, submission, or report.
 
 ---
 
@@ -40,10 +47,16 @@ residential property-price prediction beyond structured housing and geospatial f
 | A1 — trained head (price MSE) | ResNet18 | image, trainable regression head | \$336.6K | 0.099 |
 | A2 — trained head (log-price) | ResNet18 | image, trainable regression head | \$334.0K | 0.113 |
 | B — partial fine-tune (layer4) | ResNet18 | image, fine-tuned layer4 + head | \$297.5K | 0.296 |
+| E6 — DINOv2 fusion (executed check) | XGBoost | tabular + DINOv2-vits14 embeddings | \$109.4K | 0.912 |
 | **FINAL — tuned** | **XGBoost** | **engineered tabular + geo** | **\$103.8K** | **0.921** |
 
 Every number above is read directly from committed artifacts
-(`reports/results_tabular.csv`, `reports/results_multimodal.csv`, `reports/tuned_best.json`) — no manual re-entry.
+(`reports/results_tabular.csv`, `reports/results_multimodal.csv`, `reports/results_dinov2_fusion.json`,
+`reports/tuned_best.json`) — no manual re-entry.
+
+Population caveat: E1–E3 use the random 80/20 holdout (n=3,222); E6 uses the same full-population
+split (its own 0.9203 tabular control); A1/A2/B and E4/E5 use the 434 image-covered properties. Do
+not compare across populations directly.
 
 ---
 
@@ -129,10 +142,14 @@ early:
 - **B — partial fine-tune of layer4** + head (same split, early stopping, seed 42): R² 0.296. Fine-
   tuning narrows the gap but remains far below the tabular control (0.872) on the *same* 434 image-
   covered validation rows.
-- **Decision gate.** Because the trained visual signal (0.113 → 0.296) still trails the tabular
-  control by >0.57 R², the pre-registered gate fired **Case 1 — STOP**. No fusion model
-  (E6), ResNet50 fine-tuning, ViT, TTA, or PCA sweeps were attempted; the model space was not
-  expanded to chase a win. The negative result is the result.
+- **Decision gate → Case 1 (STOP).** Because the trained visual signal (0.113 → 0.296) still
+  trails the tabular control by >0.57 R², the pre-registered gate stopped the planned
+  task-trained-embedding fusion (E6), ViT, full ResNet50 fine-tune, and TTA. Two additional
+  representation checks that **were** executed and committed also came back negative:
+  an E6 fusion with DINOv2-vits14 embeddings (R² 0.9117 vs 0.9203 tabular on the same covered
+  split) and PCA-ablated embeddings (best tabular variant 0.8634 vs 0.8721 control). None of
+  them beat the tabular champion, so the negative result holds across representations.
+  Full details: `reports/results_dinov2_fusion.json`, `reports/results_multimodal_pca.csv`.
 
 The vision branch remains **archived as research documentation** and is deliberately excluded from the
 production app. It is not exposed in the API or UI, and it is not the production champion. Grad-CAM
@@ -229,10 +246,13 @@ the evidence says — not a demo bolted around an interesting-sounding idea.
 ```
 app/                 lightweight deployment (FastAPI backend + HTML demo + CLI)
 data/                raw train/test xlsx (large; not committed)
+archive/             historical research notes and provenance
+INTERVIEW_PREP.md    interview-ready summary of the main claims
 notebooks/           clean narrative notebooks + legacy history
+PACKAGE.md           package / structure guide
 predictions/         final submission.csv (5,404 rows)
 preprocessed/        satellite manifest, embeddings, deterministic train/val split
-reports/             phase artifacts (JSON/CSV/figures) + full project report
+reports/             phase artifacts, ARTIFACT_GUIDE.md, and full project report
 scripts/             phase scripts, one per step (seeded, idempotent); scripts/legacy/ = superseded
 src/                 importable package (data, features, models, satellite, evaluation, inference)
 ```
@@ -298,10 +318,10 @@ python app/run.py
 python -m app.cli --bedrooms 3 --bathrooms 2.0 --sqft_living 1910 --sqft_lot 7600 \
     --floors 1.5 --sqft_above 1560 --yr_built 1975 --zipcode 98065 \
     --lat 47.5724 --long -122.2300 --sqft_living15 1840 --sqft_lot15 7620
-
-# Vision RESEARCH ONLY (clearly labelled secondary model):
-python -m app.cli --pid 1777500160      # price from a stored satellite tile
 ```
+
+The satellite / ResNet18 experiments are archived as research only — they are not callable
+from the app or the CLI. See the satellite sections below for the research conclusion.
 
 ```python
 from src.inference.predict import predict_single

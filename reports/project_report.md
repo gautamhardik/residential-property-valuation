@@ -233,7 +233,7 @@ standardization is baked into the head as buffers so the deployed model outputs 
 
 ---
 
-## 9. Why the Vision Branch Was Rejected
+## 9. Why satellite imagery was not selected for production
 
 **The negative result, stated plainly.**
 
@@ -242,10 +242,18 @@ standardization is baked into the head as buffers so the deployed model outputs 
 2. **Task-specific training did not recover the signal.** A trained visual head (A1 0.099 / A2
    0.113) and a partial fine-tune (B 0.296) remain far below the tabular control (0.872) on the same
    434 properties.
-3. **Pre-registered decision gate → Case 1 (STOP).** Because even the trained representation did not
-   approach the tabular signal, no fusion model (E6), ViT, ResNet50 fine-tuning, PCA sweeps, or TTA
-   were attempted. The model space was not expanded to chase a win; the negative result is the result.
-   (See `reports/results_dl_eval.json`, `reports/results_dl_final.json`.)
+3. **Pre-registered decision gate → Case 1 (STOP).** Because even the trained representation
+   did not approach the tabular signal, the planned task-trained-embedding fusion (E6 with a
+   task-trained embedding), ViT, full ResNet50 fine-tune, and TTA were **not** executed — the
+   model space was not expanded to chase a win. This is distinct from the following experiments,
+   which **were** executed and are documented in the repository:
+   - **E6 — DINOv2-vits14 embedding fusion** (`reports/results_dinov2_fusion.json`): R² 0.9117
+     vs 0.9203 tabular on the covered split — degrades, reproducing the frozen-embedding result
+     with a second encoder family.
+   - **PCA-ablated embeddings** (`reports/results_multimodal_pca.csv`): PCA8/16/32/64, best
+     tabular variant 0.8634 vs 0.8721 control — compression never recovers the loss.
+   These executed checks strengthen rather than weaken the case: the negative result is robust
+   across representations. (See `reports/results_dl_eval.json`, `reports/results_dl_final.json`.)
 
 **Interpretation.** Under the available coverage (13.6%) and single 256px Mapbox tile per property,
 the visual modality provides limited incremental information beyond structured/geospatial features.
@@ -352,18 +360,16 @@ POST /predict  →  engineered features  →  tuned XGBoost  →  property price
 - Freeze snapshot: `reports/baseline_snapshot.json` (SHA-256 checksums of model/pipeline/submission
   verified unchanged; RMSE $103,802.8 / R² 0.9205).
 
-### 13.2 Vision research endpoint (secondary)
+### 13.2 Vision research branch (archived, not served in production)
 
 ```text
-POST /predict-image  →  TorchScript ResNet18 (partial fine-tune)  →  vision_only  [SECONDARY]
+ResNet18 research pipeline  →  TorchScript artifact  →  archived research evidence
 ```
 
 The vision model lost the gate (§9) and is **not** the production champion. It is serialized as a
 CPU-compatible TorchScript artifact (`models/deployed/vision_price.pt`) containing the full model
-(backbone + trained layer4 + head) and served strictly as a labelled research service
-(`model_type: vision_only`), so the two models can never be confused. CLI:
-`python -m app.cli --pid <id>`. Frontend: dedicated "Vision experiment" tab with an explicit
-NOT-the-champion notice.
+(backbone + trained layer4 + head) and retained strictly as archived research evidence. The current
+production API, CLI, and frontend do **not** expose a vision prediction path.
 
 Serialization verified: TorchScript and PyTorch produce identical predictions (max-abs difference
 $0.00, R² diff 0.0000), and inference runs in eval mode with no training at request time.
@@ -425,9 +431,9 @@ python scripts/phase16_qa.py                     # full automated QA cascade
 
 Every script is seeded, idempotent, and writes its artifact under `reports/`. Satellite embeddings
 and the split are cached under `preprocessed/`, so the multimodal phase re-runs offline. The vision
-model (`models/deployed/vision_price.pt`) is served via the API's `POST /predict-image`, the CLI's
-`--pid`, and the frontend's Vision tab (see `app/backend/main.py`, `app/cli.py`,
-`src/inference/vision.py`).
+model (`models/deployed/vision_price.pt`) is retained as archived research evidence only; it is not
+served by the API, CLI, or frontend (see `app/backend/main.py`, `app/cli.py`, `src/inference/vision.py`
+for the research path, not production).
 
 **External requirements.** Raw `data/train.xlsx`/`test.xlsx` must be supplied (not committed); a
 Mapbox access token is required only to *re-fetch* imagery (cached tiles and embeddings are

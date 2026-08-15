@@ -24,6 +24,7 @@ from pydantic import BaseModel
 
 from src.inference.predict import predict_single
 from src.inference.artifacts import preload_tabular_artifacts
+from src.inference.explain import local_summary, error_band_for
 
 logger = logging.getLogger("uvicorn.error")
 
@@ -41,7 +42,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="Satellite Property Valuation API",
+    title="Residential Property Valuation API",
     version="1.0.0",
     lifespan=lifespan,
 )
@@ -114,16 +115,18 @@ def health():
 
 @app.post("/predict")
 def predict(payload: PropertyInput):
-   try:
-       _validate_primary_payload(payload.model_dump())
-       result = predict_single(payload.model_dump())
-       result["model_role"] = "primary"
-       result["status"] = "production"
-       return result
-   except ValueError as exc:
-       return _err(str(exc))
-   except Exception:  # noqa: BLE001
-       return _err("Unable to reach the valuation service. Please try again.")
+    try:
+        _validate_primary_payload(payload.model_dump())
+        result = predict_single(payload.model_dump())
+        result["model_role"] = "primary"
+        result["status"] = "production"
+        result["local_shap"] = local_summary(payload.model_dump())
+        result["error_band"] = error_band_for(result["predicted_price"])
+        return result
+    except ValueError as exc:
+        return _err(str(exc))
+    except Exception:  # noqa: BLE001
+        return _err("Unable to reach the valuation service. Please try again.")
 
 
 FRONTEND = ROOT / "app" / "frontend" / "index.html"
@@ -132,5 +135,5 @@ FRONTEND = ROOT / "app" / "frontend" / "index.html"
 @app.get("/", response_class=HTMLResponse)
 def index():
    if not FRONTEND.exists():
-       return "<h1>Satellite Property Valuation API</h1><p>POST /predict</p>"
+        return "<h1>Residential Property Valuation API</h1><p>POST /predict</p>"
    return FRONTEND.read_text(encoding="utf-8")

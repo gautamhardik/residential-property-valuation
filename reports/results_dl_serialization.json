@@ -1,7 +1,7 @@
 {
   "phase": "Phase 8",
   "artifacts": {
-    "torchscript": "C:\\Users\\hiten\\Documents\\Satellite_Property_Valuation\\models\\deployed\\vision_price.pt"
+    "torchscript": "models/deployed/vision_price.pt"
   },
   "model": "ResNet18 layer4 partial fine-tune + regression head",
   "verification": {

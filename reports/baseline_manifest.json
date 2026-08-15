@@ -1,0 +1,90 @@
+{
+  "metadata": {
+    "model_version": "xgboost-tuned-2026-08-15",
+    "data_version": "king-county-train-test-v1",
+    "feature_version": "engineered-tabular-v3",
+    "timestamp": "2026-08-15T16:57:43+05:30"
+  },
+  "champion": {
+    "rmse": 103802.7632,
+    "r2": 0.9205
+  },
+  "artifacts": [
+    {
+      "path": "models/deployed/tabular_model.joblib",
+      "role": "final_xgboost_model",
+      "sha256": "b696236af1309ab4ec4a1e4bd1f1cce0be6686475bce49f12cd024280cbe26fc"
+    },
+    {
+      "path": "models/deployed/tabular_pipeline.joblib",
+      "role": "tuned_parameters_and_encoder",
+      "sha256": "d8d0f38f2ff4e71652f3d364ef6990b484916c24ce22feb3f96e0905e4ed2176"
+    },
+    {
+      "path": "reports/final_model.json",
+      "role": "final_model_summary",
+      "sha256": "29ca8bc6aa12d4c820a7f0fec818fe07b8f1c1930f6f355e5d5ebab3aa81a32f"
+    },
+    {
+      "path": "reports/tuned_best.json",
+      "role": "tuned_parameters",
+      "sha256": "2cf6d5a0975aa5c2a547c3666e2ca3b6234ae68697d111e1d098d1cdbf1889eb"
+    },
+    {
+      "path": "src/features/build_features.py",
+      "role": "feature_configuration",
+      "sha256": "ff36cfe77aac9f74429e5aa95cc4d94abf3c9d0bc93efbbed976d48de974e2e0"
+    },
+    {
+      "path": "preprocessed/split.json",
+      "role": "canonical_random_split",
+      "sha256": "bc2bc25f3fdb166d83876dc0160790cb0c1b6cdf590ca380f2aece8f19e36df5"
+    },
+    {
+      "path": "reports/split_strategy.json",
+      "role": "spatial_validation",
+      "sha256": "8998ad57da5f597d4abff18bd26b67e231c32b02046307864615268f5f7b9e22"
+    },
+    {
+      "path": "reports/temporal_validation.json",
+      "role": "temporal_validation",
+      "sha256": "cefdcae2c48ba30163c14489010fb8f36543d27025c96edc58ed60144669b438"
+    },
+    {
+      "path": "predictions/submission.csv",
+      "role": "final_submission",
+      "sha256": "fecaf94a0a5e1a6c9afdba0347ebfd63bc99c90decd6efb40b087441a8b2db5c"
+    },
+    {
+      "path": "reports/experiment_log.json",
+      "role": "authoritative_project_results",
+      "sha256": "36da2e2ee0a3f24adc7cb2a1ea24544942817be5beab5bffb2db2f5f089a6f29"
+    },
+    {
+      "path": "reports/results_dl_final.json",
+      "role": "final_satellite_research",
+      "sha256": "5d6ed1e24627ddde2257529e7df9b08b5abfe1a73b6f6fedda36877e328548d8"
+    },
+    {
+      "path": "reports/project_report.md",
+      "role": "final_report",
+      "sha256": "dc0bfdedf6424db675d35930fe75f5f4080d7e214581e7401c6bd1f45e92b6ce"
+    }
+  ],
+  "raw_data_external": {
+    "note": "Raw King County data (data/train.xlsx, data/test.xlsx) is intentionally NOT committed (large, licensed). Digests below are for verification when data is re-created. See reports/ARTIFACT_GUIDE.md.",
+    "source": "King County house sales public dataset (kc_house_data/kc_house_test)",
+    "files": [
+      {
+        "path": "data/train.xlsx",
+        "role": "raw_training_data",
+        "sha256": "c657815a7ba081b84406d7c7725f68b45ea0e84eff74642bb83f51543b870659"
+      },
+      {
+        "path": "data/test.xlsx",
+        "role": "raw_test_data",
+        "sha256": "439b2adcfa25cd244f9e083c6c109a19d0dd2d722678a22fe6ce7b0af5a65e25"
+      }
+    ]
+  }
+}

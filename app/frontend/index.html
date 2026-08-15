@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Satellite Property Valuation</title>
-<meta name="description" content="Machine-learning property price estimation for residential properties using XGBoost and satellite imagery. Portfolio-grade valuation demo.">
+<title>Residential Property Valuation</title>
+<meta name="description" content="Estimate residential property value from property characteristics and geospatial signals using a tuned XGBoost model.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -28,11 +28,6 @@
   --primary-glow:    rgba(59,130,246,0.25);
   --primary-bg:      #DBEAFE;
   --primary-light:   #EFF6FF;
-  --vision:          #10B981;
-  --vision-deep:     #059669;
-  --vision-glow:     rgba(16,185,129,0.2);
-  --vision-bg:       #D1FAE5;
-  --vision-light:    #ECFDF5;
   --danger:          #EF4444;
   --danger-bg:       #FEF2F2;
   --danger-border:   #FECACA;
@@ -79,6 +74,26 @@ body {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Skip link — only visible when focused */
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 100;
+  padding: 10px 16px;
+  background: var(--navy);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 0 0 var(--r-md) 0;
+}
+.skip-link:focus { left: 0; }
+
+.wrapper:focus { outline: none; }
+.skip-link:focus,
+button:focus-visible,
+a:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
 
 /* ============================================================
    HERO HEADER — full-bleed dark with animated gradient mesh
@@ -264,7 +279,7 @@ body {
 .hero-metric-label {
   font-family: var(--font-mono);
   font-size: 10px;
-  color: rgba(255,255,255,0.4);
+  color: rgba(255,255,255,0.6);
   letter-spacing: 0.06em;
   text-transform: uppercase;
   display: block;
@@ -326,11 +341,6 @@ body {
   border-bottom-color: var(--primary);
 }
 
-.switcher-btn[aria-selected="true"].vision-tab {
-  color: var(--vision-deep);
-  border-bottom-color: var(--vision-deep);
-}
-
 .switcher-btn:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; }
 
 .tab-icon {
@@ -344,7 +354,6 @@ body {
 }
 
 .tab-icon.production { background: var(--primary-bg); color: var(--primary-deep); }
-.tab-icon.research   { background: var(--vision-bg);  color: var(--vision-deep);  }
 .tab-badge {
   font-size: 10px;
   font-family: var(--font-mono);
@@ -431,14 +440,13 @@ body {
 }
 
 .chip-primary { background: var(--primary-bg); color: var(--primary-deep); border-color: #BFDBFE; }
-.chip-vision  { background: var(--vision-bg);  color: var(--vision-deep);  border-color: #6EE7B7; }
 .chip-amber   { background: #FEF9C3; color: #92400E; border-color: #FDE68A; }
 
 /* ============================================================
    FORM SECTIONS
    ============================================================ */
 .form-section {
-  padding: 16px 22px 14px;
+  padding: 13px 22px 12px;
   border-bottom: 1px solid var(--border);
   position: relative;
 }
@@ -451,7 +459,7 @@ body {
   font-weight: 600;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--muted-light);
+  color: var(--muted);
   margin-bottom: 11px;
   display: block;
 }
@@ -492,7 +500,7 @@ body {
 }
 
 .field input::-webkit-inner-spin-button,
-.field input::-webkit-outer-spin-button { opacity: 0.4; }
+.field input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
 
 .field input:hover:not(:focus):not(.is-invalid) {
   border-color: var(--border-hover);
@@ -510,6 +518,125 @@ body {
   border-color: var(--danger);
   background: var(--danger-bg);
   box-shadow: 0 0 0 3px rgba(239,68,68,0.1);
+}
+
+.field select {
+  width: 100%;
+  height: 40px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--r-md);
+  background: #FAFBFF;
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 500;
+  padding: 0 30px 0 10px;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748B' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  cursor: pointer;
+  transition: border-color var(--t-fast), box-shadow var(--t-fast), background-color var(--t-fast);
+}
+
+.field select:hover:not(:focus):not(.is-invalid) {
+  border-color: var(--border-hover);
+  background-color: var(--surface);
+}
+
+.field select:focus {
+  outline: none;
+  border-color: var(--primary);
+  background-color: var(--surface);
+  box-shadow: 0 0 0 3px rgba(59,130,246,0.12);
+}
+
+.field select.is-invalid {
+  border-color: var(--danger);
+  background-color: var(--danger-bg);
+  box-shadow: 0 0 0 3px rgba(239,68,68,0.1);
+}
+
+.field-control-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  letter-spacing: 0.02em;
+}
+
+.segmented {
+  display: flex;
+  border: 1.5px solid var(--border);
+  border-radius: var(--r-md);
+  background: #FAFBFF;
+  overflow: hidden;
+  height: 40px;
+}
+
+.segmented input[type="radio"] {
+  position: absolute;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.segmented label {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+  cursor: pointer;
+  transition: background var(--t-fast), color var(--t-fast);
+  border-right: 1px solid var(--border);
+}
+
+.segmented label:last-child { border-right: 0; }
+.segmented label:hover { background: var(--surface-low); }
+
+.segmented input[type="radio"]:checked + label {
+  background: var(--primary-bg);
+  color: var(--primary-deep);
+  box-shadow: inset 0 0 0 1px var(--primary-deep);
+  font-weight: 700;
+}
+
+.segmented input[type="radio"]:focus-visible + label {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.field-error {
+  font-size: 11px;
+  color: var(--danger);
+  font-weight: 500;
+  line-height: 1.35;
+}
+
+.section-sublabel {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 12px 0 8px;
+}
+
+.section-sublabel:first-of-type { margin-top: 0; }
+
+.field-hint {
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.5;
+  margin-top: 10px;
 }
 
 /* ============================================================
@@ -562,24 +689,6 @@ button:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
 .btn-primary:hover:not(:disabled) {
   background-position: 100% 100%;
   box-shadow: 0 6px 20px rgba(37,99,235,0.45);
-}
-
-/* Vision CTA */
-.btn-vision-primary {
-  background: linear-gradient(135deg, #059669 0%, #10B981 50%, #047857 100%);
-  background-size: 200% 200%;
-  background-position: 0% 0%;
-  color: #FFFFFF;
-  font-size: 14px;
-  padding: 0 22px;
-  height: 44px;
-  box-shadow: 0 4px 14px rgba(16,185,129,0.3);
-  letter-spacing: 0.01em;
-}
-
-.btn-vision-primary:hover:not(:disabled) {
-  background-position: 100% 100%;
-  box-shadow: 0 6px 20px rgba(16,185,129,0.4);
 }
 
 /* Secondary */
@@ -650,8 +759,6 @@ button:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
   flex-shrink: 0;
 }
 
-.vision-panel-active .spinner { border-top-color: var(--vision); }
-
 @keyframes spin { to { transform: rotate(360deg); } }
 
 /* ============================================================
@@ -663,6 +770,7 @@ button:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
   gap: 16px;
   position: sticky;
   top: 60px;
+  scroll-margin-top: 80px;
 }
 
 /* ────── EMPTY STATE ────── */
@@ -672,23 +780,22 @@ button:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
   align-items: center;
   justify-content: center;
   text-align: center;
-  padding: 52px 28px;
-  min-height: 300px;
+  padding: 32px 24px;
+  min-height: 0;
 }
 
 .empty-icon-wrap {
-  width: 72px; height: 72px;
+  width: 44px; height: 44px;
   border-radius: 50%;
   background: linear-gradient(135deg, var(--primary-light), var(--primary-bg));
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 0 auto 20px;
+  margin: 0 auto 14px;
   border: 1.5px solid #BFDBFE;
-  box-shadow: 0 8px 24px rgba(59,130,246,0.12);
 }
 
-.empty-icon-wrap svg { opacity: 0.7; }
+.empty-icon-wrap svg { opacity: 0.8; }
 
 .empty-label {
   font-family: var(--font-mono);
@@ -697,37 +804,20 @@ button:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--muted-light);
-  margin-bottom: 10px;
+  margin-bottom: 8px;
 }
 
 .empty-text {
   font-size: 14px;
-  color: var(--muted);
-  max-width: 220px;
-  line-height: 1.6;
+  color: var(--text);
+  font-weight: 600;
+  line-height: 1.5;
 }
 
 .empty-subtext {
   font-size: 12px;
-  color: var(--muted-light);
-  margin-top: 5px;
-}
-
-.empty-cta-hint {
-  margin-top: 20px;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--primary);
-  opacity: 0.7;
-  animation: floatHint 3s ease-in-out infinite;
-}
-
-@keyframes floatHint {
-  0%, 100% { transform: translateY(0); opacity: 0.7; }
-  50%       { transform: translateY(-4px); opacity: 1; }
+  color: var(--muted);
+  margin-top: 4px;
 }
 
 /* ────── RESULT CARD ────── */
@@ -805,7 +895,7 @@ button:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
   font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--muted-light);
+  color: var(--muted);
   margin-bottom: 10px;
   display: block;
 }
@@ -853,7 +943,7 @@ button:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
   font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--muted-light);
+  color: var(--muted);
   margin-bottom: 10px;
   display: block;
   padding-top: 14px;
@@ -891,8 +981,8 @@ button:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
 
 .factor-bar-wrap {
   width: 100%;
-  height: 5px;
-  background: var(--border);
+  height: 7px;
+  background: var(--border-hover);
   border-radius: 999px;
   overflow: hidden;
 }
@@ -917,13 +1007,72 @@ button:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
 
 .factors-note {
   font-size: 11px;
-  color: var(--muted-light);
+  color: var(--muted);
   line-height: 1.5;
   font-style: italic;
   padding-top: 8px;
   border-top: 1px solid var(--border);
   margin-top: 4px;
 }
+
+/* Typical error line (empirical segment) */
+.typical-line {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+  margin-top: 12px;
+  padding: 8px 10px;
+  border-radius: var(--r-sm);
+  background: var(--surface-low);
+  display: none;
+}
+.typical-line.visible { display: block; }
+.typical-line .typical-strong { color: var(--primary-deep); }
+
+/* Local explanation (TreeSHAP) */
+.shap-section { padding: 0 22px 18px; }
+.shap-group-title {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 10px 0 4px;
+}
+.shap-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 90px auto;
+  gap: 10px;
+  align-items: center;
+  padding: 7px 0;
+  border-bottom: 1px solid rgba(148,163,184,0.1);
+}
+.shap-item:last-child { border-bottom: 0; }
+.shap-name {
+  font-size: 12px;
+  color: var(--text);
+  font-weight: 500;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.shap-track {
+  height: 6px;
+  background: var(--surface-low);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.shap-bar { display: block; height: 100%; border-radius: 999px; width: 0; transition: width 0.6s cubic-bezier(0.4,0,0.2,1); }
+.shap-bar.up { background: linear-gradient(90deg, #3B82F6, #818CF8); }
+.shap-bar.down { background: linear-gradient(90deg, #94A3B8, #CBD5E1); }
+.shap-val {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  text-align: right;
+  min-width: 64px;
+}
+.shap-val.up { color: var(--primary-deep); }
+.shap-val.down { color: #64748B; }
 
 /* Result action row */
 .result-actions {
@@ -953,236 +1102,24 @@ button:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
 }
 
 /* ============================================================
-   RESEARCH CONTEXT CARD
+   FOOTER
    ============================================================ */
-.research-context {
-  background: linear-gradient(135deg, var(--vision-light), #ECFDF5);
-  border: 1px solid #6EE7B7;
-  border-radius: var(--r-xl);
-  padding: 18px 20px;
-  box-shadow: 0 4px 16px rgba(16,185,129,0.08);
-  position: relative;
-  overflow: hidden;
-}
-
-.research-context::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 0; right: 0; height: 2px;
-  background: linear-gradient(90deg, transparent, var(--vision), transparent);
-}
-
-.research-context-label {
-  font-family: var(--font-mono);
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--vision-deep);
-  margin-bottom: 8px;
-  display: block;
-}
-
-.research-context p { font-size: 13px; color: var(--vision-deep); line-height: 1.65; }
-
-/* ============================================================
-   VISION PANEL
-   ============================================================ */
-.vision-panel-note {
-  background: linear-gradient(135deg, var(--vision-light), #ECFDF5);
-  border: 1px solid #6EE7B7;
-  border-radius: var(--r-md);
-  padding: 12px 14px;
-  font-size: 13px;
-  color: var(--vision-deep);
-  line-height: 1.5;
-  margin: 16px 22px 0;
-}
-
-.vision-panel-note strong { font-weight: 700; }
-
-/* Image mode switcher */
-.img-mode-switcher {
-  display: flex;
-  margin: 16px 22px 0;
-  background: var(--surface-low);
-  border: 1.5px solid var(--border);
-  border-radius: var(--r-md);
-  padding: 3px;
-  gap: 3px;
-}
-
-.img-mode-btn {
-  flex: 1;
-  background: transparent;
-  border: 0;
-  border-radius: var(--r-sm);
-  padding: 8px 12px;
-  font-family: var(--font-mono);
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  color: var(--muted);
-  cursor: pointer;
-  transition: background var(--t-base), color var(--t-base), box-shadow var(--t-base);
-  min-height: 36px;
-}
-
-.img-mode-btn[aria-selected="true"] {
-  background: var(--surface);
-  color: var(--vision-deep);
-  box-shadow: 0 1px 4px rgba(10,17,40,0.1);
-}
-
-.img-mode-btn:hover:not([aria-selected="true"]) {
-  color: var(--text);
-  background: rgba(255,255,255,0.5);
-  transform: none;
-}
-
-.img-mode-btn:focus-visible { outline: 2px solid var(--vision); outline-offset: 2px; }
-
-.img-mode-section { margin: 0 22px; padding: 14px 0 0; }
-
-.img-mode-helper { font-size: 12px; color: var(--muted); margin-top: 5px; }
-
-/* Satellite preview */
-/* ── SAT VIEWER ── */
-.sat-viewer {
-  margin: 14px 22px 0;
-  border-radius: var(--r-lg);
-  overflow: hidden;
-  border: 1.5px dashed #6EE7B7;
-  background: linear-gradient(135deg, var(--vision-light), #ECFDF5);
-  min-height: 220px;
-  position: relative;
-  transition: border-color var(--t-base), box-shadow var(--t-base);
-}
-
-.sat-viewer:has(.sat-img-wrap:not([style*="none"])) {
-  border-style: solid;
-  border-color: #059669;
-  box-shadow: 0 4px 20px rgba(5,150,105,0.15);
-}
-
-/* placeholder */
-.sat-placeholder {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  padding: 32px 20px;
-  min-height: 220px;
+.site-footer {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 32px 30px;
   text-align: center;
-  color: var(--muted);
-  font-size: 13px;
-  line-height: 1.5;
 }
 
-.sat-placeholder svg { opacity: 0.4; }
-
-/* actual image */
-.sat-img-wrap {
-  position: relative;
-  width: 100%;
-  line-height: 0;
-  overflow: hidden;
-}
-
-.sat-img {
-  width: 100%;
-  display: block;
-  object-fit: cover;
-  max-height: 280px;
-  transition: transform 0.4s cubic-bezier(0.4,0,0.2,1), filter 0.3s ease;
-  filter: saturate(1.1) contrast(1.04);
-  transform-origin: center;
-}
-
-.sat-img-wrap:hover .sat-img {
-  transform: scale(1.08);
-  filter: saturate(1.25) contrast(1.08) brightness(1.04);
-}
-
-/* overlay metadata strip */
-.sat-overlay {
-  position: absolute;
-  bottom: 0; left: 0; right: 0;
-  padding: 24px 12px 10px;
-  background: linear-gradient(transparent, rgba(5,20,15,0.72));
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 8px;
-  opacity: 0;
-  transition: opacity var(--t-base);
-  pointer-events: none;
-}
-
-.sat-img-wrap:hover .sat-overlay { opacity: 1; }
-
-.sat-overlay-label {
-  font-family: var(--font-mono);
-  font-size: 11px;
-  color: rgba(255,255,255,0.9);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  flex: 1;
-}
-
-.sat-overlay-zoom {
-  font-family: var(--font-mono);
-  font-size: 10px;
-  color: rgba(255,255,255,0.55);
-  flex-shrink: 0;
-  letter-spacing: 0.04em;
-}
-
-/* skeleton shimmer */
-.sat-skeleton {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(135deg, var(--vision-light), #ECFDF5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.sat-skeleton-inner {
-  width: 80%;
-  height: 60%;
-  border-radius: var(--r-md);
-  background: linear-gradient(90deg,
-    rgba(16,185,129,0.08) 0%,
-    rgba(16,185,129,0.18) 40%,
-    rgba(16,185,129,0.08) 100%);
-  background-size: 200% 100%;
-  animation: skelShimmer 1.4s ease-in-out infinite;
-}
-
-@keyframes skelShimmer {
-  0%   { background-position: -200% 0; }
-  100% { background-position:  200% 0; }
-}
-
-.satellite-meta {
-  padding: 8px 22px 0;
-  font-family: var(--font-mono);
-  font-size: 11px;
-  color: var(--muted);
-}
-
-
-/* Vision result — teal accent */
-.vision-result-note {
+.site-footer p {
   font-size: 12px;
+  line-height: 1.6;
   color: var(--muted);
-  line-height: 1.5;
-  padding: 0 22px 14px;
-  font-style: italic;
+  max-width: 620px;
+  margin: 0 auto;
 }
+
+.site-footer strong { color: var(--text); font-weight: 600; }
 
 /* ============================================================
    RESPONSIVE
@@ -1204,13 +1141,17 @@ button:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
   .switcher-bar { padding: 0 16px; }
   .field-grid { grid-template-columns: 1fr; }
   .field-grid.cols-3 { grid-template-columns: 1fr; }
-  .perf-grid { grid-template-columns: 1fr; }
+  .perf-grid { grid-template-columns: 1fr 1fr; }
   .hero-model-card { width: 100%; min-width: 0; }
   .hero-metrics { grid-template-columns: 1fr 1fr; }
+  .site-footer { padding: 0 16px 24px; }
+  .shap-item { grid-template-columns: minmax(0, 1fr) 56px auto; gap: 6px; }
+  .shap-val { min-width: 0; font-size: 11px; }
 }
 </style>
 </head>
 <body>
+<a class="skip-link" href="#panel-primary">Skip to property form</a>
 
 <!-- ============================================================
      HERO HEADER
@@ -1220,40 +1161,41 @@ button:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
     <div class="hero-left">
       <div class="hero-eyebrow">
         <span class="hero-eyebrow-dot" aria-hidden="true"></span>
-        Satellite Property Valuation
+        Residential Property Valuation
       </div>
       <h1 class="hero-title">
-        Machine-learning<br><em>property price estimation</em>
+        Estimate residential<br><em>property value</em>
       </h1>
       <p class="hero-subtitle">
-        Estimate residential sale prices using structured and geospatial property data — powered by a tuned XGBoost model with engineered tabular and satellite features.
+        Estimate sale prices from property characteristics and geospatial signals, powered by a tuned XGBoost model.
       </p>
     </div>
 
-    <div class="hero-model-card" role="complementary" aria-label="Production model status">
+    <div class="hero-model-card" role="complementary" aria-label="Production model status"
+         title="Metrics evaluated on a held-out random split. Spatial and temporal robustness are reported separately.">
       <div class="model-status-row">
         <span class="prod-badge">
           <span class="prod-badge-dot" aria-hidden="true"></span>
-          Production Model
+          Production · Champion
         </span>
       </div>
       <div class="hero-model-name">Tuned XGBoost</div>
       <div class="hero-metrics">
         <div class="hero-metric">
-          <span class="hero-metric-label">R²</span>
+          <span class="hero-metric-label">Holdout R²</span>
           <span class="hero-metric-value">0.921</span>
         </div>
         <div class="hero-metric">
-          <span class="hero-metric-label">RMSE</span>
+          <span class="hero-metric-label">Holdout RMSE</span>
           <span class="hero-metric-value">$103.8K</span>
         </div>
         <div class="hero-metric">
-          <span class="hero-metric-label">Features</span>
-          <span class="hero-metric-value">Tabular</span>
+          <span class="hero-metric-label">Model</span>
+          <span class="hero-metric-value">Tuned XGBoost</span>
         </div>
         <div class="hero-metric">
-          <span class="hero-metric-label">Status</span>
-          <span class="hero-metric-value" style="color:#86EFAC;font-size:13px;">Champion</span>
+          <span class="hero-metric-label">Inputs</span>
+          <span class="hero-metric-value">Tabular + Geo</span>
         </div>
       </div>
     </div>
@@ -1280,19 +1222,18 @@ button:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
 <div class="page-body">
 
   <!-- ======================== PRIMARY PANEL ======================== -->
-  <div class="panel active workspace" id="panel-primary" role="tabpanel" aria-labelledby="tab-primary">
+  <div class="panel active workspace" id="panel-primary" role="tabpanel" tabindex="-1" aria-labelledby="tab-primary">
 
     <!-- LEFT: Input workspace -->
     <section class="card" aria-label="Property details input">
       <div class="card-header">
-        <span class="card-title">Property Details</span>
-        <span class="chip chip-primary">XGBoost · Production</span>
+        <h2 class="card-title">Property Details</h2>
       </div>
 
       <form id="primary-form" novalidate>
 
         <div class="form-section">
-          <span class="section-label">Property</span>
+          <span class="section-label">Home</span>
           <div class="field-grid">
             <div class="field">
               <label for="bedrooms">Bedrooms</label>
@@ -1303,43 +1244,74 @@ button:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
               <input id="bathrooms" name="bathrooms" type="number" value="2.0" step="0.25" min="0.5" max="20">
             </div>
             <div class="field">
-              <label for="sqft_living">Sqft Living</label>
+              <label for="sqft_living">Living area (sq ft)</label>
               <input id="sqft_living" name="sqft_living" type="number" value="1910" step="1" min="200" max="10000">
             </div>
             <div class="field">
-              <label for="sqft_lot">Sqft Lot</label>
+              <label for="sqft_lot">Lot size (sq ft)</label>
               <input id="sqft_lot" name="sqft_lot" type="number" value="7600" step="1" min="200" max="500000">
             </div>
           </div>
         </div>
 
         <div class="form-section">
-          <span class="section-label">Quality</span>
+          <span class="section-label">Quality &amp; amenities</span>
           <div class="field-grid">
             <div class="field">
-              <label for="grade">Grade <span style="font-weight:400;color:var(--muted-light)">(1–13)</span></label>
-              <input id="grade" name="grade" type="number" value="7" step="1" min="1" max="13">
+              <label for="grade">Grade</label>
+              <select id="grade" name="grade">
+                <option value="1">1 — Cabin</option>
+                <option value="2">2 — Minimal</option>
+                <option value="3">3 — Small</option>
+                <option value="4">4 — Low</option>
+                <option value="5">5 — Fair</option>
+                <option value="6">6 — Low average</option>
+                <option value="7" selected>7 — Average</option>
+                <option value="8">8 — Good</option>
+                <option value="9">9 — Better</option>
+                <option value="10">10 — Very good</option>
+                <option value="11">11 — Excellent</option>
+                <option value="12">12 — Luxury</option>
+                <option value="13">13 — Mansion</option>
+              </select>
             </div>
             <div class="field">
-              <label for="condition">Condition <span style="font-weight:400;color:var(--muted-light)">(1–5)</span></label>
-              <input id="condition" name="condition" type="number" value="3" step="1" min="1" max="5">
+              <label for="condition">Condition</label>
+              <select id="condition" name="condition">
+                <option value="1">1 — Poor</option>
+                <option value="2">2 — Fair</option>
+                <option value="3" selected>3 — Average</option>
+                <option value="4">4 — Good</option>
+                <option value="5">5 — Very good</option>
+              </select>
             </div>
             <div class="field">
-              <label for="view">View <span style="font-weight:400;color:var(--muted-light)">(0–4)</span></label>
-              <input id="view" name="view" type="number" value="0" step="1" min="0" max="4">
+              <label for="view">View</label>
+              <select id="view" name="view">
+                <option value="0" selected>None</option>
+                <option value="1">Fair</option>
+                <option value="2">Average</option>
+                <option value="3">Good</option>
+                <option value="4">Excellent</option>
+              </select>
             </div>
             <div class="field">
-              <label for="waterfront">Waterfront <span style="font-weight:400;color:var(--muted-light)">(0/1)</span></label>
-              <input id="waterfront" name="waterfront" type="number" value="0" step="1" min="0" max="1">
+              <span class="field-control-label" id="waterfront-label">Waterfront</span>
+              <div class="segmented" role="radiogroup" aria-labelledby="waterfront-label">
+                <input type="radio" id="waterfront-no" name="waterfront" value="0" checked>
+                <label for="waterfront-no">No</label>
+                <input type="radio" id="waterfront-yes" name="waterfront" value="1">
+                <label for="waterfront-yes">Yes</label>
+              </div>
             </div>
           </div>
         </div>
 
         <div class="form-section">
           <span class="section-label">Structure</span>
-          <div class="field-grid cols-3">
+          <div class="field-grid">
             <div class="field">
-              <label for="yr_built">Year Built</label>
+              <label for="yr_built">Year built</label>
               <input id="yr_built" name="yr_built" type="number" value="1975" step="1" min="1800" max="2100">
             </div>
             <div class="field">
@@ -1347,35 +1319,39 @@ button:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
               <input id="floors" name="floors" type="number" value="1.5" step="0.5" min="1" max="10">
             </div>
             <div class="field">
-              <label for="sqft_above">Sqft Above</label>
+              <label for="sqft_above">Above-ground area (sq ft)</label>
               <input id="sqft_above" name="sqft_above" type="number" value="1560" step="1" min="100" max="12000">
             </div>
             <div class="field">
-              <label for="sqft_basement">Sqft Basement</label>
+              <label for="sqft_basement">Basement area (sq ft)</label>
               <input id="sqft_basement" name="sqft_basement" type="number" value="0" step="1" min="0" max="8000">
             </div>
             <div class="field">
-              <label for="yr_renovated">Year Renovated</label>
+              <label for="yr_renovated">Year renovated</label>
               <input id="yr_renovated" name="yr_renovated" type="number" value="0" step="1" min="0" max="2100">
             </div>
           </div>
         </div>
 
         <div class="form-section">
-          <span class="section-label">Neighborhood &amp; Location</span>
-          <div class="field-grid cols-3">
+          <span class="section-label">Location &amp; neighborhood</span>
+          <span class="section-sublabel">Neighborhood</span>
+          <div class="field-grid">
             <div class="field">
-              <label for="sqft_living15">Sqft Living 15</label>
+              <label for="zipcode">ZIP code</label>
+              <input id="zipcode" name="zipcode" type="number" value="98065" step="1" min="10000" max="99999">
+            </div>
+            <div class="field">
+              <label for="sqft_living15">Avg. nearby living area</label>
               <input id="sqft_living15" name="sqft_living15" type="number" value="1840" step="1" min="200" max="10000">
             </div>
             <div class="field">
-              <label for="sqft_lot15">Sqft Lot 15</label>
+              <label for="sqft_lot15">Avg. nearby lot size</label>
               <input id="sqft_lot15" name="sqft_lot15" type="number" value="7620" step="1" min="200" max="500000">
             </div>
-            <div class="field">
-              <label for="zipcode">Zipcode</label>
-              <input id="zipcode" name="zipcode" type="number" value="98065" step="1" min="10000" max="99999">
-            </div>
+          </div>
+          <span class="section-sublabel">Coordinates</span>
+          <div class="field-grid">
             <div class="field">
               <label for="lat">Latitude</label>
               <input id="lat" name="lat" type="number" value="47.5724" step="any" min="-90" max="90">
@@ -1385,6 +1361,7 @@ button:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
               <input id="long" name="long" type="number" value="-122.2300" step="any" min="-180" max="180">
             </div>
           </div>
+          <p class="field-hint">Used to derive geographic valuation signals.</p>
         </div>
 
         <input type="hidden" name="sale_year" value="2015">
@@ -1392,19 +1369,19 @@ button:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
 
         <div class="loading-bar" id="primary-loading" aria-live="polite">
           <div class="spinner" aria-hidden="true"></div>
-          <span id="primary-loading-text">Estimating property value…</span>
+          <span id="primary-loading-text">Estimating market value…</span>
         </div>
 
         <div class="status-msg" id="primary-msg" role="alert" aria-live="polite"></div>
 
         <div class="form-actions">
-          <button type="button" class="btn-secondary" id="primary-example">
-            Use example property
+          <button type="button" class="btn-secondary" id="primary-example" title="Pre-fills the form with a representative King County property.">
+            Try an example
           </button>
           <button type="submit" class="btn-primary" id="primary-submit">
-            Estimate Property Value
+            Estimate market value
           </button>
-          <button type="button" class="btn-ghost" id="primary-reset">Reset</button>
+          <button type="button" class="btn-ghost" id="primary-reset">Reset form</button>
         </div>
       </form>
     </section>
@@ -1414,60 +1391,66 @@ button:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
 
       <div class="card" id="primary-empty">
         <div class="empty-state">
-          <span class="empty-label">Your Estimate</span>
+          <h2 class="empty-label">Your Estimate</h2>
           <div class="empty-icon-wrap" aria-hidden="true">
-            <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+            <svg width="22" height="22" viewBox="0 0 32 32" fill="none">
               <path d="M16 4L3 14v14h9V20h8v8h9V14L16 4Z" stroke="#2563EB" stroke-width="2" stroke-linejoin="round"/>
             </svg>
           </div>
-          <p class="empty-text">Complete the property details to generate a valuation estimate.</p>
-          <p class="empty-subtext">Your estimated sale price will appear here.</p>
-          <span class="empty-cta-hint" aria-hidden="true">
-            ↑ Fill in the form or try an example
-          </span>
+          <p class="empty-text">Your valuation will appear here.</p>
+          <p class="empty-subtext">Try an example, or complete the property details to generate an estimate.</p>
         </div>
       </div>
 
       <div class="card result-card" id="primary-result" aria-live="polite" aria-atomic="true">
         <div class="result-price-section">
-          <p class="result-eyebrow">Estimated Sale Price</p>
+          <h2 class="result-eyebrow">Estimated market value</h2>
           <div class="result-price" id="primary-price">—</div>
           <div class="result-meta">
-            <span class="result-meta-label">Model-estimated value</span>
-            <span class="chip chip-primary">Production</span>
+            <span class="result-meta-label">Tuned XGBoost · Production</span>
           </div>
         </div>
 
         <div class="result-divider"></div>
 
         <div class="model-performance">
-          <span class="perf-label">Model Performance</span>
+          <h3 class="perf-label">Model Validation</h3>
           <div class="perf-grid">
             <div class="perf-item">
-              <span class="perf-name">Model</span>
-              <span class="perf-value" style="font-size:13px">Tuned XGBoost</span>
-            </div>
-            <div class="perf-item">
-              <span class="perf-name">R²</span>
+              <span class="perf-name">Holdout R²</span>
               <span class="perf-value">0.921</span>
             </div>
             <div class="perf-item">
-              <span class="perf-name">RMSE</span>
+              <span class="perf-name">Holdout RMSE</span>
               <span class="perf-value">$103.8K</span>
             </div>
             <div class="perf-item">
-              <span class="perf-name">Status</span>
-              <span class="perf-value" style="color:var(--vision-deep);font-size:13px">Champion</span>
+              <span class="perf-name">Validation</span>
+              <span class="perf-value" style="font-size:13px">Random 80/20 holdout</span>
+            </div>
+            <div class="perf-item">
+              <span class="perf-name">Validation error</span>
+              <span class="perf-value" style="font-size:13px">$103.8K RMSE</span>
             </div>
           </div>
+          <p class="typical-line" id="primary-typical"></p>
+          <p class="factors-note">RMSE summarizes prediction error across the holdout set; it is not an individual prediction interval. Spatial and temporal robustness are reported separately in the research notes.</p>
+        </div>
+
+        <div class="result-divider"></div>
+
+        <div class="shap-section">
+          <h3 class="perf-label">Why this estimate?</h3>
+          <div class="shap-list" id="primary-shap" aria-label="Local explanation: top contributors to this estimate"></div>
+          <p class="factors-note">Local TreeSHAP contribution from the deployed model for this specific property. Positive values raise the estimate; negative values lower it.</p>
         </div>
 
         <div class="result-divider"></div>
 
         <div class="factors-section">
-          <span class="factors-title">Top Model Drivers</span>
-          <ul class="factor-list" id="primary-factors" aria-label="Top feature importances"></ul>
-          <p class="factors-note">Feature importance reflects model contribution — not causation.</p>
+          <h3 class="factors-title">Model Feature Importance · Gain</h3>
+          <ul class="factor-list" id="primary-factors" aria-label="Global gain importance of model features"></ul>
+          <p class="factors-note">Global gain importance across the evaluation data. Higher values indicate greater overall contribution to model predictions; they do not explain this individual estimate.</p>
         </div>
 
         <div class="result-actions">
@@ -1479,22 +1462,14 @@ button:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
     </div>
   </div><!-- /panel-primary -->
 
-  <div class="panel workspace" id="panel-vision" role="tabpanel" aria-labelledby="tab-vision" style="display:none;">
-    <section class="card vision-panel-active" aria-label="Vision experiment archived">
-      <div class="card-header" style="background:linear-gradient(180deg,#F0FDF4,var(--surface));">
-        <div style="display:flex;align-items:center;gap:10px;">
-          <span class="card-title">Vision research</span>
-          <span class="chip chip-amber">Archived</span>
-        </div>
-        <span class="chip chip-vision">Doc-only</span>
-      </div>
-      <div class="vision-panel-note">
-        <strong>Archived research only.</strong> Satellite imagery was evaluated and documented separately; it is not part of the production application.
-      </div>
-    </section>
-  </div>
-
 </div><!-- /page-body -->
+
+<footer class="site-footer">
+  <p>
+    <strong>Research note:</strong> satellite imagery was evaluated separately as a potential valuation signal.
+    This application estimates value from structured and geospatial tabular data only.
+  </p>
+</footer>
 
 <script>
 "use strict";
@@ -1503,19 +1478,11 @@ button:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
    STATE
    ============================================================ */
 let primaryState  = { hasResult: false, price: null, factors: [] };
-let visionState   = { hasResult: false, price: null };
-let activeTab     = 'primary';
 let primaryAbort  = null;
-let visionAbort   = null;
-let visionMode    = 'pid';
 
 /* ============================================================
    ELEMENT REFERENCES
    ============================================================ */
-const tabPrimary        = document.getElementById('tab-primary');
-const tabVision         = document.getElementById('tab-vision');
-const panelPrimary      = document.getElementById('panel-primary');
-const panelVision       = document.getElementById('panel-vision');
 const primaryForm       = document.getElementById('primary-form');
 const primarySubmit     = document.getElementById('primary-submit');
 const primaryLoading    = document.getElementById('primary-loading');
@@ -1524,25 +1491,8 @@ const primaryEmpty      = document.getElementById('primary-empty');
 const primaryResult     = document.getElementById('primary-result');
 const primaryPrice      = document.getElementById('primary-price');
 const primaryFactors    = document.getElementById('primary-factors');
-const visionForm        = document.getElementById('vision-form');
-const visionSubmit      = document.getElementById('vision-submit');
-const visionLoading     = document.getElementById('vision-loading');
-const visionMsg         = document.getElementById('vision-msg');
-const visionEmpty       = document.getElementById('vision-empty');
-const visionResult      = document.getElementById('vision-result');
-const visionPrice       = document.getElementById('vision-price');
-const modePidBtn        = document.getElementById('mode-pid');
-const modeLatLongBtn    = document.getElementById('mode-latlong');
-const modePidFields     = document.getElementById('mode-pid-fields');
-const modeLatLongFields = document.getElementById('mode-latlong-fields');
-const satViewer         = document.getElementById('sat-viewer');
-const satPlaceholder    = document.getElementById('sat-placeholder');
-const satImgWrap        = document.getElementById('sat-img-wrap');
-const satImg            = document.getElementById('sat-img');
-const satSkeleton       = document.getElementById('sat-skeleton');
-const satOverlayLabel   = document.getElementById('sat-overlay-label');
-const satMeta           = document.getElementById('satellite-meta');
-const visionLoadingText = document.getElementById('vision-loading-text');
+const primaryShap       = document.getElementById('primary-shap');
+const primaryTypical    = document.getElementById('primary-typical');
 
 /* ============================================================
    VALIDATION RULES
@@ -1568,6 +1518,35 @@ const PRIMARY_RULES = {
   sqft_lot15:   { type:'int',   min:200,  max:500000 },
 };
 
+/* Human-readable names for validation messages (form fields). */
+const FIELD_LABELS = {
+  bedrooms:'Bedrooms', bathrooms:'Bathrooms', sqft_living:'Living area',
+  sqft_lot:'Lot size', floors:'Floors', waterfront:'Waterfront', view:'View',
+  condition:'Condition', grade:'Grade', sqft_above:'Above-ground area',
+  sqft_basement:'Basement area', yr_built:'Year built', yr_renovated:'Year renovated',
+  zipcode:'ZIP code', lat:'Latitude', long:'Longitude',
+  sqft_living15:'Avg. nearby living area', sqft_lot15:'Avg. nearby lot size',
+};
+
+/* Human-readable names for the importance panel (raw + engineered feature names). */
+const FEATURE_LABELS = {
+  bedrooms:'Bedrooms', bathrooms:'Bathrooms', sqft_living:'Living area',
+  sqft_lot:'Lot size', floors:'Floors', waterfront:'Waterfront', view:'View quality',
+  condition:'Condition', grade:'Grade', sqft_above:'Above-ground area',
+  sqft_basement:'Basement area', yr_built:'Year built', yr_renovated:'Year renovated',
+  zipcode:'ZIP code', lat:'Latitude', long:'Longitude',
+  sqft_living15:'Avg. nearby living area', sqft_lot15:'Avg. nearby lot size',
+  age:'Property age', renovated:'Recently renovated', renovation_age:'Years since renovation',
+  total_sqft:'Total built area', basement_frac:'Basement share', above_frac:'Above-ground share',
+  living_per_bedroom:'Living area per bedroom', lot_living_ratio:'Lot-to-living ratio',
+  zip_freq:'Neighborhood frequency', zip_target:'Neighborhood location signal',
+};
+
+function featureLabel(name) {
+  if (FEATURE_LABELS[name]) return FEATURE_LABELS[name];
+  return name.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+}
+
 /* ============================================================
    SAMPLES
    ============================================================ */
@@ -1577,10 +1556,6 @@ const PRIMARY_SAMPLES = [
   { bedrooms:2, bathrooms:1.5, sqft_living:1480, sqft_lot:4200, floors:1, waterfront:0, view:0, condition:3, grade:6, sqft_above:1480, sqft_basement:0,   yr_built:1957, yr_renovated:0,    zipcode:98118, lat:47.5513, long:-122.2834, sqft_living15:1520, sqft_lot15:4100 },
   { bedrooms:5, bathrooms:3.0, sqft_living:3340, sqft_lot:10120,floors:2.5,waterfront:1, view:4, condition:5, grade:11,sqft_above:2900, sqft_basement:440, yr_built:2005, yr_renovated:2018, zipcode:98039, lat:47.5848, long:-122.1514, sqft_living15:3280, sqft_lot15:9700 },
   { bedrooms:3, bathrooms:2.0, sqft_living:1865, sqft_lot:6900, floors:1.5,waterfront:0, view:1, condition:4, grade:8, sqft_above:1580, sqft_basement:285, yr_built:1989, yr_renovated:2005, zipcode:98074, lat:47.3577, long:-122.1723, sqft_living15:1930, sqft_lot15:7120 },
-];
-
-const VISION_SAMPLES = [
-  { pid:1777500160 }, { pid:1721000880 }, { pid:1927200020 }, { pid:1834100120 },
 ];
 
 /* ============================================================
@@ -1616,10 +1591,31 @@ function parseRule(val, rule) {
   return { ok: true, value: n };
 }
 
-function setFieldError(input, isError) {
+function setFieldError(input, isError, msg) {
   if (!input) return;
-  input.classList.toggle('is-invalid', isError);
-  input.setAttribute('aria-invalid', isError ? 'true' : 'false');
+  const list = input.tagName ? [input] : Array.from(input);
+  const name = input.name || (list[0] && list[0].name);
+  for (const el of list) {
+    el.classList.toggle('is-invalid', isError);
+    el.setAttribute('aria-invalid', isError ? 'true' : 'false');
+  }
+  const container = input.tagName ? input.closest('.field') : (list[0] ? list[0].closest('.field') : null);
+  if (!container) return;
+  let err = container.querySelector('.field-error');
+  if (!err) {
+    err = document.createElement('span');
+    err.className = 'field-error';
+    if (name) err.id = 'err-' + name;
+    container.appendChild(err);
+  }
+  if (name) {
+    for (const el of list) {
+      if (isError) el.setAttribute('aria-describedby', 'err-' + name);
+      else el.removeAttribute('aria-describedby');
+    }
+  }
+  err.hidden = !isError;
+  err.textContent = isError ? (msg || 'Please enter a valid value.') : '';
 }
 
 function showMsg(el, text, type) {
@@ -1636,19 +1632,7 @@ function setLoading(btn, loadingEl, isLoading) {
 }
 
 /* ============================================================
-   TAB SWITCHING
-   ============================================================ */
-function switchToTab(tab) {
-  if (tab !== 'primary') return;
-  activeTab = 'primary';
-  tabPrimary.setAttribute('aria-selected', 'true');
-  panelPrimary.classList.add('active');
-}
-
-tabPrimary.addEventListener('click', () => switchToTab('primary'));
-
-/* ============================================================
-   VALIDATION
+   PRIMARY PANEL (single valuation panel)
    ============================================================ */
 function validatePrimary() {
   const formData = new FormData(primaryForm);
@@ -1661,50 +1645,20 @@ function validatePrimary() {
     if (!rule) continue;
     const input = primaryForm.elements.namedItem(name);
     const result = parseRule(rawVal, rule);
-    setFieldError(input, !result.ok);
+    const label = FIELD_LABELS[name] || name;
+    const msg = result.ok ? '' : `${label} must be between ${rule.min} and ${rule.max}.`;
+    setFieldError(input, !result.ok, msg);
     if (!result.ok && !firstInvalid) firstInvalid = input;
     else if (result.ok) payload[name] = result.value;
   }
 
   if (firstInvalid) {
-    firstInvalid.focus();
+    const focusEl = firstInvalid.tagName ? firstInvalid : firstInvalid[0];
+    if (focusEl) focusEl.focus();
     showMsg(primaryMsg, 'Please check the highlighted fields.', 'error');
     return null;
   }
   return payload;
-}
-
-function validateVision() {
-  const pidInput  = document.getElementById('vision-pid');
-  const latInput  = document.getElementById('vision-lat');
-  const longInput = document.getElementById('vision-long');
-  setFieldError(pidInput, false);
-  setFieldError(latInput, false);
-  setFieldError(longInput, false);
-  clearMsg(visionMsg);
-
-  if (visionMode === 'pid') {
-    const pid = Number(pidInput.value.trim());
-    if (!Number.isFinite(pid) || !Number.isInteger(pid) || pid <= 0) {
-      setFieldError(pidInput, true);
-      showMsg(visionMsg, 'Please enter a valid Property ID (positive integer).', 'error');
-      pidInput.focus();
-      return null;
-    }
-    return { pid };
-  }
-
-  const lat = Number(latInput.value.trim());
-  const lon = Number(longInput.value.trim());
-  let ok = true;
-  if (!Number.isFinite(lat) || lat < -90  || lat > 90)  { setFieldError(latInput,  true); ok = false; }
-  if (!Number.isFinite(lon) || lon < -180 || lon > 180) { setFieldError(longInput, true); ok = false; }
-  if (!ok) {
-    showMsg(visionMsg, 'Enter a latitude between −90 and 90 and a longitude between −180 and 180.', 'error');
-    (document.querySelector('#mode-latlong-fields input.is-invalid') || latInput).focus();
-    return null;
-  }
-  return { lat, long: lon };
 }
 
 /* ============================================================
@@ -1731,8 +1685,13 @@ primaryForm.addEventListener('submit', async (e) => {
       body: JSON.stringify(payload),
       signal: ctrl.signal,
     });
-    const body = await res.json();
-    if (!res.ok || body.error) throw new Error(body.error || 'Unable to reach the valuation service.');
+    let body = {};
+    try { body = await res.json(); } catch (err) { /* non-JSON body */ }
+    if (!res.ok || body.error) {
+      const e = new Error(body.error || 'Unable to generate the estimate right now. Please try again.');
+      e.userMessage = e.message;
+      throw e;
+    }
     if (ctrl.signal.aborted) return;
 
     primaryState = { hasResult: true, price: body.predicted_price, factors: body.top_factors_gain || [] };
@@ -1740,6 +1699,11 @@ primaryForm.addEventListener('submit', async (e) => {
     // Show result card first (before animation) so element is visible
     primaryEmpty.style.display = 'none';
     primaryResult.classList.add('visible');
+
+    // On small screens, bring the estimate into view without moving desktop position
+    if (window.innerWidth <= 860 && primaryResult.scrollIntoView) {
+      primaryResult.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
 
     // Animated price counter
     animatePrice(primaryPrice, Number(body.predicted_price));
@@ -1751,7 +1715,7 @@ primaryForm.addEventListener('submit', async (e) => {
       const pct = Math.round((f.importance / maxImp) * 100);
       return `<li class="factor-item" style="animation-delay:${i * 60}ms">
         <div class="factor-left">
-          <span class="factor-name">${f.feature}</span>
+          <span class="factor-name">${featureLabel(f.feature)}</span>
           <span class="factor-bar-wrap" aria-hidden="true">
             <span class="factor-bar" data-pct="${pct}" style="width:0%"></span>
           </span>
@@ -1767,9 +1731,50 @@ primaryForm.addEventListener('submit', async (e) => {
       });
     });
 
+    // Typical error — empirical holdout segment for this price range
+    const band = body.error_band;
+    if (band && band.typical_error) {
+      const usd = Math.round(band.typical_error).toLocaleString();
+      primaryTypical.innerHTML = `Typical error for your value range: <span class="typical-strong">±$${usd}</span> (median across the holdout); it is not a prediction interval.`;
+      primaryTypical.classList.add('visible');
+    } else {
+      primaryTypical.classList.remove('visible');
+      primaryTypical.textContent = '';
+    }
+
+    // Local explanation — TreeSHAP for THIS prediction
+    const ls = body.local_shap;
+    const mkShapGroup = (title, items, direction) => {
+      if (!items.length) return '';
+      const max = Math.max(...items.map(i => Math.abs(i.contribution)), 1);
+      const rows = items.map(i => {
+        const pct = Math.round(Math.abs(i.contribution) / max * 100);
+        const sign = direction === 'up' ? '+' : '−';
+        const usd = Math.round(Math.abs(i.contribution)).toLocaleString();
+        return `<div class="shap-item">
+          <span class="shap-name">${i.label}</span>
+          <span class="shap-track" aria-hidden="true"><span class="shap-bar ${direction}" data-pct="${pct}" style="width:0%"></span></span>
+          <span class="shap-val ${direction}">${sign}$${usd}</span>
+        </div>`;
+      }).join('');
+      return `<div class="shap-group"><h4 class="shap-group-title">${title}</h4>${rows}</div>`;
+    };
+    if (ls && (ls.top_positive.length || ls.top_negative.length)) {
+      primaryShap.innerHTML =
+        mkShapGroup('Raises the estimate', ls.top_positive, 'up') +
+        mkShapGroup('Lowers the estimate', ls.top_negative, 'down');
+      requestAnimationFrame(() => {
+        primaryShap.querySelectorAll('.shap-bar[data-pct]').forEach((b, i) => {
+          setTimeout(() => { b.style.width = b.dataset.pct + '%'; }, 80 + i * 50);
+        });
+      });
+    } else {
+      primaryShap.innerHTML = '<p class="factors-note">Local explanation is unavailable for this estimate.</p>';
+    }
+
   } catch (err) {
     if (err.name === 'AbortError') return;
-    showMsg(primaryMsg, err.message || 'Unable to reach the valuation service. Please try again.', 'error');
+    showMsg(primaryMsg, (err && err.userMessage) || 'Unable to generate the estimate right now. Please try again.', 'error');
   } finally {
     if (!ctrl.signal.aborted) setLoading(primarySubmit, primaryLoading, false);
   }
@@ -1788,7 +1793,7 @@ document.getElementById('primary-example').addEventListener('click', () => {
    const el = primaryForm.elements.namedItem(k);
    if (el) setFieldError(el, false);
   });
-  showMsg(primaryMsg, 'Example property loaded — click Estimate to run the model.', 'info');
+  showMsg(primaryMsg, 'Example property loaded — estimate market value now.', 'info');
 });
 
 /* ============================================================
@@ -1822,7 +1827,7 @@ document.getElementById('primary-clear').addEventListener('click', () => {
    COPY SUMMARY
    ============================================================ */
 async function copySummary(kind) {
-  const text = `Satellite Property Valuation — Primary Estimate\nEstimated value: ${fmt$(primaryState.price)}\nModel: Tuned XGBoost (production)\nR² 0.921 · RMSE $103.8K`;
+  const text = `Residential Property Valuation — Estimate\nEstimated value: ${fmt$(primaryState.price)}\nModel: Tuned XGBoost (production)\nHoldout R² 0.921 · Holdout RMSE $103.8K`;
   try {
    await navigator.clipboard.writeText(text);
    showMsg(primaryMsg, 'Summary copied to clipboard.', 'success');
@@ -1832,6 +1837,31 @@ async function copySummary(kind) {
 }
 
 document.getElementById('primary-copy').addEventListener('click', () => copySummary('primary'));
+
+/* ============================================================
+   SEGMENTED CONTROL — roving tabindex so arrow keys + Tab behave
+   ============================================================ */
+(function initWaterfrontGroup() {
+  const label = document.getElementById('waterfront-label');
+  if (!label) return;
+  const group = label.closest('.segmented');
+  if (!group) return;
+  const radios = Array.from(group.querySelectorAll('input[type="radio"]'));
+  if (!radios.length) return;
+  const setTabs = () => radios.forEach(r => { r.tabIndex = r.checked ? 0 : -1; });
+  radios.forEach(r => { if (r.checked) r.tabIndex = 0; else r.tabIndex = -1; });
+  group.addEventListener('keydown', (e) => {
+    if (!['ArrowRight', 'ArrowLeft', 'ArrowUp', 'ArrowDown'].includes(e.key)) return;
+    e.preventDefault();
+    const idx = radios.findIndex(r => r.checked);
+    const next = (e.key === 'ArrowRight' || e.key === 'ArrowDown')
+      ? (idx + 1) % radios.length
+      : (idx - 1 + radios.length) % radios.length;
+    radios[next].checked = true;
+    setTabs();
+    radios[next].focus();
+  });
+})();
 </script>
 </body>
 </html>

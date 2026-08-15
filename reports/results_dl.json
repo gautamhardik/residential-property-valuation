@@ -248,5 +248,5 @@
       }
     }
   },
-  "checkpoint_dir": "C:\\Users\\hiten\\Documents\\Satellite_Property_Valuation\\models\\vision\\phase2"
+  "checkpoint_dir": "models/vision/phase2"
 }
