@@ -7,12 +7,31 @@
 <p align="center">
   <a href="https://propertyvaluationbyhardik.vercel.app"><img src="https://img.shields.io/badge/Live_App-Deployed-blue?style=for-the-badge" alt="Live App"></a>
   <a href="#quick-start"><img src="https://img.shields.io/badge/Quick_Start-Run_Locally-green?style=for-the-badge" alt="Quick Start"></a>
-  <a href="#model-development"><img src="https://img.shields.io/badge/R²-0.921-brightgreen?style=for-the-badge" alt="R²"></a>
+  <a href="#model-development"><img src="https://img.shields.io/badge/R²-0.9205-brightgreen?style=for-the-badge" alt="R²"></a>
   <a href="#model-development"><img src="https://img.shields.io/badge/RMSE-103.8K-orange?style=for-the-badge" alt="RMSE"></a>
   <a href="#reproducibility"><img src="https://img.shields.io/badge/Tests-29_passing-success?style=for-the-badge" alt="Tests"></a>
 </p>
 
 ---
+
+## What this project demonstrates
+
+- **End-to-end ownership**: data audit → feature engineering → model selection under multiple generalization regimes → production deployment → request-time explainability, with no hand-off gaps.
+- **Statistical judgment over leaderboard-chasing**: the champion model was chosen for temporal and spatial robustness, not the highest random-holdout score — full comparison and reasoning in [Model development](#model-development).
+- **Honest negative results**: a controlled ablation study on satellite imagery, including the decision gate that stopped the vision track, is documented in full below — see [Research: satellite imagery](#research-satellite-imagery).
+- **Production engineering discipline**: cross-language numerical parity (Python ↔ Node.js, bit-exact on a 501-case golden set), frozen artifact hashing, and CI-gated tests — not just a notebook that happens to run.
+- **Self-aware methodology**: known limitations of the modeling and validation approach (spatial split leakage risk, error-band construction) are flagged in this document rather than left for a reviewer to find.
+
+---
+## Demo Video
+
+
+
+https://github.com/user-attachments/assets/da32e078-4d2f-4749-922f-53cb5a701f1a
+
+
+---
+
 
 ## At a glance
 
@@ -20,12 +39,12 @@
 |---|---|
 | **Target** | Residential sale price (King County, WA — 2014–15 sales) |
 | **Champion model** | Tuned XGBoost (535 trees, depth 4) |
-| **Features** | 33 engineered tabular + geospatial |
-| **Holdout R²** | 0.921 |
+| **Features** | 20 raw + 13 engineered = 33 model features |
+| **Holdout R²** | 0.9205 |
 | **Holdout RMSE** | $103,803 |
-| **Out-of-time R²** | 0.893 |
+| **Out-of-time R²** | 0.8926 |
 | **Spatial R²** | 0.809 |
-| **Explainability** | Local TreeSHAP per prediction |
+| **Explainability** | Local TreeSHAP per prediction, computed at request time |
 | **Deployment** | Node.js on Vercel — no Python at runtime |
 
 ---
@@ -84,7 +103,9 @@ The 20 raw fields are augmented to 33 model features:
 | `lat_long_interaction` | Derived | `lat * long` |
 | `dist_to_center_km` | Geospatial | Haversine distance to `(47.6062, -122.3321)` |
 | `zip_freq` | Frequency | Fraction of training rows in each ZIP code |
-| `zip_target` | Target-encoded | James-Stein shrinkage with smoothing=20; fold-safe (fitted on training split only, inside sklearn Pipeline) |
+| `zip_target` | Target-encoded | James-Stein shrinkage, smoothing=20; fold-safe (fitted on training split only, inside sklearn Pipeline) |
+
+> **Why James-Stein shrinkage over a plain target-mean encoding?** King County has ~70 ZIP codes with highly uneven sample counts. A raw target mean overfits low-frequency ZIPs (some have <20 sales); James-Stein shrinks each ZIP's estimate toward the global mean in proportion to its sample size, reducing variance where the data is thin without discarding signal where it's dense.
 
 ---
 
@@ -120,9 +141,11 @@ Same tuned XGBoost, same 33 features — only the split strategy changes.
 |---|---|---|---|---|---|---|
 | **Random 80/20** | 12,888 | 3,222 | 103,803 | 0.9205 | — | In-distribution accuracy |
 | **Temporal (out-of-time)** | 12,554 | 3,556 | 117,474 | 0.8926 | −0.028 | Forward generalization (cutoff 2015-03-01) |
-| **Spatial** | 15,656 | 454 | 95,433 | 0.809 | −0.112 | Geographic generalization (median nn = 0.094 km; 99.6% of val within 1 km of training) |
+| **Spatial** | 15,656 | 454 | 95,433 | 0.809 | −0.112 | Geographic generalization |
 
-The spatial gap (−0.112 R²) is the most informative: it isolates how well the model extrapolates to neighborhoods it has not seen at the exact same locations. The temporal gap (−0.028) is small, confirming the model does not overfit to the 2014–2015 market window.
+The temporal gap (−0.028) is small, confirming the model does not overfit to the 2014–2015 market window.
+
+> **Limitation, stated plainly**: 99.6% of spatial-validation points sit within 1 km of a training point (median nearest-neighbor distance = 0.094 km) — so this split mostly tests *local interpolation*, not extrapolation to genuinely unseen neighborhoods. The −0.112 R² gap is still the largest of the three, but shouldn't be read as evidence of performance in an unseen city or county. A true held-out-region split is listed under [Future work](#future-work).
 
 ---
 
@@ -161,12 +184,14 @@ The API response includes:
 
 | Field | Value |
 |---|---|
-| Predicted price | $557,597.38 |
+| Predicted price | $557,597.13 |
 | SHAP base (expected value) | $538,904.63 |
 | Total contribution | +$18,692.50 |
 | Top positive factor | `dist_to_center_km` (+$61,560) |
 | Top negative factor | `grade` (−$50,573) |
 | Error band | $512K–$686K (typical error $46,638; n=644) |
+
+> **On the error band methodology**: the band is the median absolute error observed within the predicted-price decile, not a statistically calibrated prediction interval. It's a fast, dependency-free approximation suitable for a UI-facing "typical error" display. A calibrated interval (e.g., quantile regression or conformal prediction) would give formal coverage guarantees and is the natural next step — see [Future work](#future-work).
 
 ---
 
@@ -207,6 +232,8 @@ A parallel research track tested whether satellite imagery could improve the tab
 
 **Image coverage**: 13.59% of training properties (2,189 / 16,110). Coverage bias analysis found negligible differences across all measured attributes (all |Cohen's d| < 0.15).
 
+> **Why is image-only R² so low (~0.14) rather than just lower than tabular?** Two compounding factors: the vision head trains on the 13.59% image-covered subset only (~2,200 rows — thin for a CNN), and static satellite imagery captures footprint, roofline, and lot greenery but not the interior condition, grade, and layout attributes that drive most of the tabular model's signal (see feature importance above — none of the top 5 features are visually inferable from a top-down tile).
+
 > The vision branch is archived as research documentation and is intentionally not exposed in the production app or CLI.
 
 ---
@@ -227,6 +254,7 @@ The deployed app at [propertyvaluationbyhardik.vercel.app](https://propertyvalua
 - **No external model server**: XGBoost model weights are loaded from three JSON files (`tabular_model.json`, `tabular_pipeline.json`, `tabular_meta.json`) bundled with the Node function.
 - **500 MB function limit**: The Node.js deployment avoids the 500 MB Python runtime limit on Vercel's serverless functions.
 - **Bit-exact parity**: Node.js inference matches the Python oracle to within measurement noise (501-case golden set, max absolute error = 0 on prediction, contribution, and base value).
+- **Alternatives considered**: an ONNX-based runtime or a separate always-on model-serving endpoint were both viable; the pure Node re-implementation was chosen to avoid a second deployable, an extra network hop, and cold-start latency on a model small enough (535 shallow trees) to re-implement directly.
 
 ---
 
@@ -265,14 +293,14 @@ The deployed app at [propertyvaluationbyhardik.vercel.app](https://propertyvalua
 
 ```json
 {
-  "predicted_price": 557597.38,
+  "predicted_price": 557597.13,
   "model": "XGBoost tuned (tabular + engineered features)",
   "model_role": "primary",
   "status": "production",
   "local_shap": {
     "expected_value": 538904.63,
-    "total_contribution": 18692.5,
-    "predicted_price": 557597.12,
+    "total_contribution": 18692.50,
+    "predicted_price": 557597.13,
     "top_positive": [
       {"feature": "dist_to_center_km", "contribution": 61560.12, "label": "Distance to city center"}
     ],
@@ -356,7 +384,7 @@ The UI displays:
 
 - **Routing**: `vercel.json` maps `/api/predict` and `/api/health` to Node.js functions; `/` to `public/index.html`; `/health` rewrites to `/api/health`.
 - **Model files**: Three JSON artifacts (model weights, feature pipeline, metadata) are bundled with the Node function via `includeFiles`.
-- **Protection**: Vercel Deployment Protection is disabled (was enabled by default; turned off via REST API to allow unauthenticated public access).
+- **Protection**: Vercel Deployment Protection is disabled (was enabled by default; turned off via REST API to allow unauthenticated public access). No request rate limiting is currently implemented — see [Future work](#future-work).
 - **Auto-deploy**: Git-linked to `gautamhardik/residential-property-valuation`; pushes to `main` trigger automatic deployments.
 
 ---
@@ -386,10 +414,10 @@ make test             # or: pytest -q
 make smoke            # or: python scripts/smoke_api.py
 
 # Start the local API
-make run-api          # or: python app/run.py --reload
+make run-api           # or: python app/run.py --reload
 
 # CLI inference
-make run-cli          # or: python -m app.cli --bedrooms 3 --bathrooms 2.0 ...
+make run-cli           # or: python -m app.cli --bedrooms 3 --bathrooms 2.0 ...
 ```
 
 ### Node parity tests
@@ -435,40 +463,40 @@ node node/parity.js
 ## Repository structure
 
 ```
-├── api/                    # Vercel serverless functions
-│   ├── predict.js          # POST /api/predict handler
-│   └── health.js           # GET /api/health handler
+├── api/                        # Vercel serverless functions
+│   ├── predict.js              # POST /api/predict handler
+│   └── health.js               # GET /api/health handler
 ├── app/
-│   ├── backend/main.py     # Python FastAPI (local dev)
-│   ├── frontend/index.html # Production UI (60 KB)
-│   ├── cli.py              # CLI inference
-│   └── run.py              # Local API launcher
+│   ├── backend/main.py         # Python FastAPI (local dev)
+│   ├── frontend/index.html     # Production UI (60 KB)
+│   ├── cli.py                  # CLI inference
+│   └── run.py                  # Local API launcher
 ├── docs/
-│   └── demo.mp4            # Demo video
+│   └── demo.mp4                # Demo video
 ├── images/
-│   └── screenshots/        # App screenshots
-├── models/deployed/        # Production artifacts
-│   ├── tabular_model.json  # XGBoost weights
-│   ├── tabular_pipeline.json # Feature pipeline
-│   └── tabular_meta.json   # Metadata
+│   └── screenshots/            # App screenshots
+├── models/deployed/            # Production artifacts
+│   ├── tabular_model.json      # XGBoost weights
+│   ├── tabular_pipeline.json   # Feature pipeline
+│   └── tabular_meta.json       # Metadata
 ├── node/
-│   ├── scorer.js           # Node.js inference engine
-│   ├── parity.js           # Full parity suite
-│   ├── test_*.js           # Parity + contract tests
+│   ├── scorer.js               # Node.js inference engine
+│   ├── parity.js               # Full parity suite
+│   ├── test_*.js               # Parity + contract tests
 │   └── ...
 ├── reports/
-│   ├── figures/            # Analysis plots
-│   ├── node_scorer/        # Parity report + golden set
-│   └── *.json              # Metrics, audits, experiments
+│   ├── figures/                # Analysis plots
+│   ├── node_scorer/            # Parity report + golden set
+│   └── *.json                  # Metrics, audits, experiments
 ├── src/
 │   ├── features/build_features.py  # Feature engineering
-│   ├── config.py           # Constants, paths, seeds
-│   └── inference/          # Python inference (local)
-├── tests/test_core.py      # 29 unit + integration tests
-├── vercel.json             # Routing + build config
-├── package.json            # Node deps
-├── Makefile                # install/test/smoke/run
-└── requirements.txt        # Python runtime deps
+│   ├── config.py                # Constants, paths, seeds
+│   └── inference/               # Python inference (local)
+├── tests/test_core.py           # 29 unit + integration tests
+├── vercel.json                  # Routing + build config
+├── package.json                 # Node deps
+├── Makefile                     # install/test/smoke/run
+└── requirements.txt             # Python runtime deps
 ```
 
 ---
@@ -480,6 +508,21 @@ node node/parity.js
 - **Image coverage**: Only 13.59% of training properties had satellite imagery available; the vision research track concluded that imagery did not improve performance under the tested setup.
 - **Temporal window**: Trained on 2014–2015 sales; extrapolation to significantly different market conditions has not been validated.
 - **Geographic scope**: King County, WA only. The model has not been tested on other markets.
+- **Spatial validation is mostly local interpolation, not extrapolation**: 99.6% of spatial-validation points are within 1 km of a training point (see [Validation and generalization](#validation-and-generalization)). Reported spatial R² should not be read as evidence of performance in unseen regions.
+- **No API rate limiting**: the public endpoint has no request throttling; this is acceptable for a portfolio demo but would need addressing before any real-traffic use.
+
+---
+
+## Future work
+
+| Area | Current state | Planned improvement |
+|---|---|---|
+| Prediction intervals | Empirical error band (median AE per price decile) | Quantile regression or conformal prediction for calibrated intervals |
+| Spatial generalization | Random spatial holdout (mostly local interpolation) | True held-out-region split (e.g., train on N sub-areas, validate on a fully excluded sub-area) |
+| Luxury segment bias | −$30,171 mean bias above $680K | Price-band-aware sample weighting or a segment-specific model |
+| Waterfront segment | n=21, high variance | Targeted data collection or a rule-based premium adjustment as a stopgap |
+| API hardening | No rate limiting | Add request throttling and basic abuse protection before any real-traffic use |
+| Vision track | Stopped at negative result (frozen/fine-tuned embeddings underperform tabular) | Gated on image coverage growing well past 13.59% — insufficient signal-to-noise to justify revisiting at current coverage |
 
 ---
 
