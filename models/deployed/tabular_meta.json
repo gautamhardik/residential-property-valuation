@@ -1,0 +1,88 @@
+{
+  "model": "XGBoost (tuned) on engineered tabular features",
+  "importance_type": "xgboost_gain",
+  "top_factors_gain": [
+    {
+      "feature": "grade",
+      "importance": 0.26828283071517944
+    },
+    {
+      "feature": "sqft_living",
+      "importance": 0.15032045543193817
+    },
+    {
+      "feature": "zip_target",
+      "importance": 0.11388678848743439
+    },
+    {
+      "feature": "waterfront",
+      "importance": 0.10792738199234009
+    },
+    {
+      "feature": "total_sqft",
+      "importance": 0.056958459317684174
+    },
+    {
+      "feature": "view",
+      "importance": 0.04419798403978348
+    },
+    {
+      "feature": "dist_to_center_km",
+      "importance": 0.0438913032412529
+    },
+    {
+      "feature": "lat",
+      "importance": 0.024590233340859413
+    }
+  ],
+  "local_shap_method": "TreeSHAP on the deployed model, evaluated at request time",
+  "error_band": {
+    "edges": [
+      127044.74,
+      298858.22000000003,
+      401677.202,
+      512385.108,
+      685826.412,
+      4191526.5
+    ],
+    "segments": [
+      {
+        "lo": 127044,
+        "hi": 298858,
+        "segment_label": "$127K\u2013$299K",
+        "typical_error": 25010.39,
+        "n": 645
+      },
+      {
+        "lo": 298858,
+        "hi": 401677,
+        "segment_label": "$299K\u2013$402K",
+        "typical_error": 27304.54,
+        "n": 644
+      },
+      {
+        "lo": 401677,
+        "hi": 512385,
+        "segment_label": "$402K\u2013$512K",
+        "typical_error": 36181.48,
+        "n": 644
+      },
+      {
+        "lo": 512385,
+        "hi": 685826,
+        "segment_label": "$512K\u2013$686K",
+        "typical_error": 46637.89,
+        "n": 644
+      },
+      {
+        "lo": 685826,
+        "hi": 4191526,
+        "segment_label": "$686K\u2013$4192K",
+        "typical_error": 82338.6,
+        "n": 645
+      }
+    ],
+    "method": "median absolute prediction error over the 20% holdout, bucketed by predicted value",
+    "note": "Empirical segment-level error; it is not a per-property confidence interval."
+  }
+}

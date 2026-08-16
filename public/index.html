@@ -1,0 +1,1867 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Residential Property Valuation</title>
+<meta name="description" content="Estimate residential property value from property characteristics and geospatial signals using a tuned XGBoost model.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   DESIGN SYSTEM — PREMIUM DARK HERO + EDITORIAL LIGHT WORKSPACE
+   ============================================================ */
+:root {
+  --bg:              #F5F4F0;
+  --surface:         #FFFFFF;
+  --surface-low:     #F1F5F9;
+  --border:          #E2E8F0;
+  --border-hover:    #CBD5E1;
+  --navy:            #0A1128;
+  --navy-mid:        #0F1E3D;
+  --text:            #0B1C30;
+  --muted:           #64748B;
+  --muted-light:     #94A3B8;
+  --primary:         #3B82F6;
+  --primary-deep:    #1D4ED8;
+  --primary-glow:    rgba(59,130,246,0.25);
+  --primary-bg:      #DBEAFE;
+  --primary-light:   #EFF6FF;
+  --danger:          #EF4444;
+  --danger-bg:       #FEF2F2;
+  --danger-border:   #FECACA;
+  --success:         #10B981;
+  --success-bg:      #ECFDF5;
+  --success-border:  #A7F3D0;
+  --gold:            #F59E0B;
+
+  --font-display:    'Playfair Display', Georgia, serif;
+  --font-body:       'Inter', system-ui, sans-serif;
+  --font-mono:       'JetBrains Mono', 'Courier New', monospace;
+
+  --shadow-sm:       0 1px 3px rgba(10,17,40,0.08);
+  --shadow-md:       0 4px 24px rgba(10,17,40,0.08);
+  --shadow-lg:       0 12px 40px rgba(10,17,40,0.12);
+  --shadow-xl:       0 24px 64px rgba(10,17,40,0.16);
+  --shadow-blue:     0 8px 32px rgba(59,130,246,0.2);
+
+  --r-sm:  4px;
+  --r-md:  8px;
+  --r-lg:  14px;
+  --r-xl:  20px;
+
+  --t-fast: 120ms ease;
+  --t-base: 200ms ease;
+  --t-slow: 350ms cubic-bezier(0.4,0,0.2,1);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--text);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Skip link — only visible when focused */
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 100;
+  padding: 10px 16px;
+  background: var(--navy);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 0 0 var(--r-md) 0;
+}
+.skip-link:focus { left: 0; }
+
+.wrapper:focus { outline: none; }
+.skip-link:focus,
+button:focus-visible,
+a:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+
+/* ============================================================
+   HERO HEADER — full-bleed dark with animated gradient mesh
+   ============================================================ */
+.site-hero {
+  background: var(--navy);
+  position: relative;
+  overflow: hidden;
+  padding: 0;
+  margin-bottom: 0;
+}
+
+/* Animated mesh gradient background */
+.site-hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 80% 60% at 15% 50%, rgba(59,130,246,0.18) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 80% at 85% 20%, rgba(16,185,129,0.10) 0%, transparent 55%),
+    radial-gradient(ellipse 50% 50% at 60% 90%, rgba(99,102,241,0.08) 0%, transparent 50%);
+  animation: meshShift 12s ease-in-out infinite alternate;
+}
+
+@keyframes meshShift {
+  0%   { opacity: 0.7; transform: scale(1) translate(0,0); }
+  100% { opacity: 1;   transform: scale(1.08) translate(-1%, 1%); }
+}
+
+/* Dot grid pattern */
+.site-hero::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(circle, rgba(255,255,255,0.06) 1px, transparent 1px);
+  background-size: 28px 28px;
+  pointer-events: none;
+}
+
+.hero-inner {
+  position: relative;
+  z-index: 2;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 40px 32px 36px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 32px;
+  flex-wrap: wrap;
+}
+
+.hero-left { flex: 1; min-width: 280px; }
+
+.hero-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--primary);
+  margin-bottom: 14px;
+}
+
+.hero-eyebrow-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--primary);
+  animation: pulse 2.4s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); box-shadow: 0 0 0 0 var(--primary-glow); }
+  50%       { opacity: 0.8; transform: scale(1.1); box-shadow: 0 0 0 6px transparent; }
+}
+
+.hero-title {
+  font-family: var(--font-display);
+  font-size: clamp(28px, 3.5vw, 46px);
+  font-weight: 700;
+  color: #FFFFFF;
+  line-height: 1.12;
+  letter-spacing: -0.02em;
+  margin-bottom: 12px;
+}
+
+.hero-title em {
+  font-style: italic;
+  color: var(--primary);
+}
+
+.hero-subtitle {
+  font-size: 15px;
+  color: rgba(255,255,255,0.55);
+  max-width: 500px;
+  line-height: 1.65;
+}
+
+/* Hero model card */
+.hero-model-card {
+  flex-shrink: 0;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: var(--r-xl);
+  padding: 20px 24px;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  min-width: 220px;
+  position: relative;
+  overflow: hidden;
+  transition: border-color var(--t-base), background var(--t-base);
+}
+
+.hero-model-card::before {
+  content: '';
+  position: absolute;
+  top: -1px; left: 16px; right: 16px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--primary), transparent);
+  border-radius: 0 0 2px 2px;
+}
+
+.hero-model-card:hover {
+  background: rgba(255,255,255,0.09);
+  border-color: rgba(255,255,255,0.2);
+}
+
+.model-status-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.prod-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  background: rgba(59,130,246,0.2);
+  color: #93C5FD;
+  border: 1px solid rgba(59,130,246,0.35);
+}
+
+.prod-badge-dot {
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: #93C5FD;
+  animation: pulse 2.4s ease-in-out infinite;
+}
+
+.hero-model-name {
+  font-family: var(--font-body);
+  font-size: 17px;
+  font-weight: 700;
+  color: #FFFFFF;
+  margin-bottom: 14px;
+  letter-spacing: -0.01em;
+}
+
+.hero-metrics {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.hero-metric {
+  background: rgba(255,255,255,0.06);
+  border-radius: var(--r-md);
+  padding: 8px 10px;
+  border: 1px solid rgba(255,255,255,0.08);
+}
+
+.hero-metric-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: rgba(255,255,255,0.6);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  display: block;
+  margin-bottom: 3px;
+}
+
+.hero-metric-value {
+  font-family: var(--font-mono);
+  font-size: 16px;
+  font-weight: 600;
+  color: #FFFFFF;
+  letter-spacing: -0.02em;
+}
+
+/* ============================================================
+   MODEL SWITCHER
+   ============================================================ */
+.switcher-bar {
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+  padding: 0 32px;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.switcher-inner {
+  max-width: 1280px;
+  margin: 0 auto;
+  display: flex;
+  gap: 0;
+}
+
+.switcher-btn {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  border-bottom: 3px solid transparent;
+  padding: 16px 22px 13px;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: color var(--t-base), border-color var(--t-base);
+  white-space: nowrap;
+  letter-spacing: 0.01em;
+}
+
+.switcher-btn:hover:not([aria-selected="true"]) { color: var(--text); }
+
+.switcher-btn[aria-selected="true"].primary-tab {
+  color: var(--primary);
+  border-bottom-color: var(--primary);
+}
+
+.switcher-btn:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; }
+
+.tab-icon {
+  width: 16px; height: 16px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  flex-shrink: 0;
+}
+
+.tab-icon.production { background: var(--primary-bg); color: var(--primary-deep); }
+.tab-badge {
+  font-size: 10px;
+  font-family: var(--font-mono);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 1px 6px;
+  border-radius: 999px;
+}
+.tab-badge.prod   { background: var(--primary-bg); color: var(--primary-deep); }
+.tab-badge.resch  { background: #FEF9C3; color: #92400E; }
+
+/* ============================================================
+   PAGE BODY
+   ============================================================ */
+.page-body {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 28px 32px 56px;
+}
+
+/* ============================================================
+   PANEL / WORKSPACE GRID
+   ============================================================ */
+.panel { display: none; }
+.panel.active { display: contents; }
+
+.workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1.55fr) minmax(300px, 1fr);
+  gap: 20px;
+  align-items: flex-start;
+}
+
+/* ============================================================
+   CARDS
+   ============================================================ */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-xl);
+  box-shadow: var(--shadow-md);
+  overflow: hidden;
+  transition: box-shadow var(--t-base), border-color var(--t-base), transform var(--t-slow);
+}
+
+.card:hover {
+  box-shadow: var(--shadow-lg);
+  border-color: var(--border-hover);
+}
+
+.card-header {
+  padding: 18px 22px 14px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  justify-content: space-between;
+  background: linear-gradient(180deg, #FAFBFF 0%, var(--surface) 100%);
+}
+
+.card-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--navy);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+/* ============================================================
+   CHIPS / BADGES
+   ============================================================ */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border: 1px solid transparent;
+}
+
+.chip-primary { background: var(--primary-bg); color: var(--primary-deep); border-color: #BFDBFE; }
+.chip-amber   { background: #FEF9C3; color: #92400E; border-color: #FDE68A; }
+
+/* ============================================================
+   FORM SECTIONS
+   ============================================================ */
+.form-section {
+  padding: 13px 22px 12px;
+  border-bottom: 1px solid var(--border);
+  position: relative;
+}
+
+.form-section:last-of-type { border-bottom: 0; }
+
+.section-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 11px;
+  display: block;
+}
+
+.field-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 9px 13px;
+}
+
+.field-grid.cols-3 { grid-template-columns: repeat(3, 1fr); }
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.field label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  letter-spacing: 0.02em;
+}
+
+.field input {
+  width: 100%;
+  height: 40px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--r-md);
+  background: #FAFBFF;
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  padding: 0 10px;
+  transition: border-color var(--t-fast), box-shadow var(--t-fast), background var(--t-fast);
+  appearance: textfield;
+}
+
+.field input::-webkit-inner-spin-button,
+.field input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+
+.field input:hover:not(:focus):not(.is-invalid) {
+  border-color: var(--border-hover);
+  background: var(--surface);
+}
+
+.field input:focus {
+  outline: none;
+  border-color: var(--primary);
+  background: var(--surface);
+  box-shadow: 0 0 0 3px rgba(59,130,246,0.12);
+}
+
+.field input.is-invalid {
+  border-color: var(--danger);
+  background: var(--danger-bg);
+  box-shadow: 0 0 0 3px rgba(239,68,68,0.1);
+}
+
+.field select {
+  width: 100%;
+  height: 40px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--r-md);
+  background: #FAFBFF;
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 500;
+  padding: 0 30px 0 10px;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748B' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  cursor: pointer;
+  transition: border-color var(--t-fast), box-shadow var(--t-fast), background-color var(--t-fast);
+}
+
+.field select:hover:not(:focus):not(.is-invalid) {
+  border-color: var(--border-hover);
+  background-color: var(--surface);
+}
+
+.field select:focus {
+  outline: none;
+  border-color: var(--primary);
+  background-color: var(--surface);
+  box-shadow: 0 0 0 3px rgba(59,130,246,0.12);
+}
+
+.field select.is-invalid {
+  border-color: var(--danger);
+  background-color: var(--danger-bg);
+  box-shadow: 0 0 0 3px rgba(239,68,68,0.1);
+}
+
+.field-control-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  letter-spacing: 0.02em;
+}
+
+.segmented {
+  display: flex;
+  border: 1.5px solid var(--border);
+  border-radius: var(--r-md);
+  background: #FAFBFF;
+  overflow: hidden;
+  height: 40px;
+}
+
+.segmented input[type="radio"] {
+  position: absolute;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.segmented label {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+  cursor: pointer;
+  transition: background var(--t-fast), color var(--t-fast);
+  border-right: 1px solid var(--border);
+}
+
+.segmented label:last-child { border-right: 0; }
+.segmented label:hover { background: var(--surface-low); }
+
+.segmented input[type="radio"]:checked + label {
+  background: var(--primary-bg);
+  color: var(--primary-deep);
+  box-shadow: inset 0 0 0 1px var(--primary-deep);
+  font-weight: 700;
+}
+
+.segmented input[type="radio"]:focus-visible + label {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.field-error {
+  font-size: 11px;
+  color: var(--danger);
+  font-weight: 500;
+  line-height: 1.35;
+}
+
+.section-sublabel {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 12px 0 8px;
+}
+
+.section-sublabel:first-of-type { margin-top: 0; }
+
+.field-hint {
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.5;
+  margin-top: 10px;
+}
+
+/* ============================================================
+   FORM ACTIONS
+   ============================================================ */
+.form-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 22px 18px;
+  flex-wrap: wrap;
+  border-top: 1px solid var(--border);
+  background: linear-gradient(0deg, #FAFBFF 0%, var(--surface) 100%);
+}
+
+button {
+  appearance: none;
+  font-family: var(--font-body);
+  font-weight: 600;
+  border-radius: var(--r-md);
+  cursor: pointer;
+  transition: transform var(--t-fast), box-shadow var(--t-base), opacity var(--t-base),
+              background var(--t-fast), border-color var(--t-fast), color var(--t-fast);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  white-space: nowrap;
+  border: 1.5px solid transparent;
+}
+
+button:hover:not(:disabled) { transform: translateY(-1px); }
+button:active:not(:disabled) { transform: translateY(0); }
+button:disabled { opacity: 0.5; cursor: not-allowed; pointer-events: none; }
+button:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+
+/* Primary CTA — gradient blue */
+.btn-primary {
+  background: linear-gradient(135deg, #2563EB 0%, #3B82F6 50%, #1D4ED8 100%);
+  background-size: 200% 200%;
+  background-position: 0% 0%;
+  color: #FFFFFF;
+  font-size: 14px;
+  padding: 0 22px;
+  height: 44px;
+  box-shadow: 0 4px 14px rgba(37,99,235,0.35);
+  letter-spacing: 0.01em;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background-position: 100% 100%;
+  box-shadow: 0 6px 20px rgba(37,99,235,0.45);
+}
+
+/* Secondary */
+.btn-secondary {
+  background: var(--surface);
+  color: var(--text);
+  border: 1.5px solid var(--border);
+  font-size: 13px;
+  padding: 0 16px;
+  height: 40px;
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: var(--surface-low);
+  border-color: var(--border-hover);
+}
+
+/* Ghost */
+.btn-ghost {
+  background: transparent;
+  color: var(--muted);
+  border: 0;
+  font-size: 13px;
+  padding: 0 8px;
+  height: 40px;
+}
+
+.btn-ghost:hover:not(:disabled) { color: var(--text); transform: none; }
+
+/* ============================================================
+   STATUS MESSAGE
+   ============================================================ */
+.status-msg {
+  display: none;
+  margin: 0 22px 12px;
+  padding: 10px 14px;
+  border-radius: var(--r-md);
+  font-size: 13px;
+  line-height: 1.45;
+  border: 1.5px solid transparent;
+}
+
+.status-msg[data-type="error"]   { display:block; color:#B91C1C; background:var(--danger-bg); border-color:var(--danger-border); }
+.status-msg[data-type="success"] { display:block; color:#065F46; background:var(--success-bg); border-color:var(--success-border); }
+.status-msg[data-type="info"]    { display:block; color:var(--primary-deep); background:var(--primary-light); border-color:#BFDBFE; }
+
+/* ============================================================
+   LOADING BAR
+   ============================================================ */
+.loading-bar {
+  display: none;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 22px 4px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.loading-bar.visible { display: flex; }
+
+.spinner {
+  width: 16px; height: 16px;
+  border: 2.5px solid var(--border);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 0.65s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ============================================================
+   RESULT COLUMN
+   ============================================================ */
+.result-column {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  position: sticky;
+  top: 60px;
+  scroll-margin-top: 80px;
+}
+
+/* ────── EMPTY STATE ────── */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 32px 24px;
+  min-height: 0;
+}
+
+.empty-icon-wrap {
+  width: 44px; height: 44px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary-light), var(--primary-bg));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 14px;
+  border: 1.5px solid #BFDBFE;
+}
+
+.empty-icon-wrap svg { opacity: 0.8; }
+
+.empty-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted-light);
+  margin-bottom: 8px;
+}
+
+.empty-text {
+  font-size: 14px;
+  color: var(--text);
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.empty-subtext {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+/* ────── RESULT CARD ────── */
+.result-card { display: none; }
+
+.result-card.visible {
+  display: block;
+  animation: resultReveal 0.35s cubic-bezier(0.34,1.56,0.64,1);
+}
+
+@keyframes resultReveal {
+  from { opacity: 0; transform: translateY(10px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Price section — premium gradient accent top border */
+.result-price-section {
+  padding: 22px 22px 18px;
+  position: relative;
+  overflow: hidden;
+}
+
+.result-price-section::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; height: 3px;
+  background: linear-gradient(90deg, var(--primary), #6366F1, var(--primary));
+  background-size: 200% 100%;
+  animation: shimmer 3s linear infinite;
+}
+
+@keyframes shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.result-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted-light);
+  margin-bottom: 6px;
+}
+
+.result-price {
+  font-family: var(--font-display);
+  font-size: clamp(2.4rem, 4.5vw, 3.2rem);
+  font-weight: 700;
+  color: var(--navy);
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+  margin: 4px 0 16px;
+  font-variant-numeric: tabular-nums;
+}
+
+.result-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.result-meta-label { font-size: 13px; color: var(--muted); }
+
+.result-divider { height: 1px; background: var(--border); }
+
+/* Performance grid */
+.model-performance { padding: 16px 22px 14px; }
+
+.perf-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 10px;
+  display: block;
+}
+
+.perf-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.perf-item {
+  background: linear-gradient(135deg, #FAFBFF, #F1F5F9);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  padding: 10px 12px;
+  transition: border-color var(--t-base), box-shadow var(--t-base);
+}
+
+.perf-item:hover {
+  border-color: var(--border-hover);
+  box-shadow: var(--shadow-sm);
+}
+
+.perf-item .perf-name {
+  font-size: 11px;
+  color: var(--muted);
+  display: block;
+  margin-bottom: 2px;
+}
+
+.perf-item .perf-value {
+  font-family: var(--font-mono);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--navy);
+  letter-spacing: -0.01em;
+}
+
+/* Feature importance */
+.factors-section { padding: 0 22px 18px; }
+
+.factors-title {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 10px;
+  display: block;
+  padding-top: 14px;
+}
+
+.factor-list { list-style: none; display: flex; flex-direction: column; gap: 0; }
+
+.factor-item {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(148,163,184,0.1);
+}
+
+.factor-item:last-child { border-bottom: 0; }
+
+.factor-left {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.factor-name {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text);
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.factor-bar-wrap {
+  width: 100%;
+  height: 7px;
+  background: var(--border-hover);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.factor-bar {
+  height: 100%;
+  background: linear-gradient(90deg, var(--primary), #6366F1);
+  border-radius: 999px;
+  width: 0;
+  transition: width 0.6s cubic-bezier(0.4,0,0.2,1);
+}
+
+.factor-value {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--muted);
+  font-weight: 600;
+  min-width: 40px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.factors-note {
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.5;
+  font-style: italic;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+  margin-top: 4px;
+}
+
+/* Typical error line (empirical segment) */
+.typical-line {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+  margin-top: 12px;
+  padding: 8px 10px;
+  border-radius: var(--r-sm);
+  background: var(--surface-low);
+  display: none;
+}
+.typical-line.visible { display: block; }
+.typical-line .typical-strong { color: var(--primary-deep); }
+
+/* Local explanation (TreeSHAP) */
+.shap-section { padding: 0 22px 18px; }
+.shap-group-title {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 10px 0 4px;
+}
+.shap-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 90px auto;
+  gap: 10px;
+  align-items: center;
+  padding: 7px 0;
+  border-bottom: 1px solid rgba(148,163,184,0.1);
+}
+.shap-item:last-child { border-bottom: 0; }
+.shap-name {
+  font-size: 12px;
+  color: var(--text);
+  font-weight: 500;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.shap-track {
+  height: 6px;
+  background: var(--surface-low);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.shap-bar { display: block; height: 100%; border-radius: 999px; width: 0; transition: width 0.6s cubic-bezier(0.4,0,0.2,1); }
+.shap-bar.up { background: linear-gradient(90deg, #3B82F6, #818CF8); }
+.shap-bar.down { background: linear-gradient(90deg, #94A3B8, #CBD5E1); }
+.shap-val {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  text-align: right;
+  min-width: 64px;
+}
+.shap-val.up { color: var(--primary-deep); }
+.shap-val.down { color: #64748B; }
+
+/* Result action row */
+.result-actions {
+  padding: 12px 22px 16px;
+  display: flex;
+  gap: 8px;
+  border-top: 1px solid var(--border);
+  background: linear-gradient(0deg, #FAFBFF, var(--surface));
+  flex-wrap: wrap;
+}
+
+.btn-result-action {
+  background: transparent;
+  border: 1.5px solid var(--border);
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: var(--r-sm);
+  height: 32px;
+}
+
+.btn-result-action:hover:not(:disabled) {
+  background: var(--surface-low);
+  border-color: var(--border-hover);
+  color: var(--text);
+}
+
+/* ============================================================
+   FOOTER
+   ============================================================ */
+.site-footer {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 32px 30px;
+  text-align: center;
+}
+
+.site-footer p {
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--muted);
+  max-width: 620px;
+  margin: 0 auto;
+}
+
+.site-footer strong { color: var(--text); font-weight: 600; }
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width: 1024px) {
+  .workspace { grid-template-columns: minmax(0, 1.3fr) minmax(280px, 1fr); gap: 16px; }
+}
+
+@media (max-width: 860px) {
+  .panel.active { display: block; }
+  .workspace { grid-template-columns: 1fr; }
+  .result-column { position: static; }
+  .field-grid.cols-3 { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 640px) {
+  .hero-inner { padding: 28px 20px 24px; }
+  .page-body { padding: 20px 16px 40px; }
+  .switcher-bar { padding: 0 16px; }
+  .field-grid { grid-template-columns: 1fr; }
+  .field-grid.cols-3 { grid-template-columns: 1fr; }
+  .perf-grid { grid-template-columns: 1fr 1fr; }
+  .hero-model-card { width: 100%; min-width: 0; }
+  .hero-metrics { grid-template-columns: 1fr 1fr; }
+  .site-footer { padding: 0 16px 24px; }
+  .shap-item { grid-template-columns: minmax(0, 1fr) 56px auto; gap: 6px; }
+  .shap-val { min-width: 0; font-size: 11px; }
+}
+</style>
+</head>
+<body>
+<a class="skip-link" href="#panel-primary">Skip to property form</a>
+
+<!-- ============================================================
+     HERO HEADER
+============================================================ -->
+<header class="site-hero">
+  <div class="hero-inner">
+    <div class="hero-left">
+      <div class="hero-eyebrow">
+        <span class="hero-eyebrow-dot" aria-hidden="true"></span>
+        Residential Property Valuation
+      </div>
+      <h1 class="hero-title">
+        Estimate residential<br><em>property value</em>
+      </h1>
+      <p class="hero-subtitle">
+        Estimate sale prices from property characteristics and geospatial signals, powered by a tuned XGBoost model.
+      </p>
+    </div>
+
+    <div class="hero-model-card" role="complementary" aria-label="Production model status"
+         title="Metrics evaluated on a held-out random split. Spatial and temporal robustness are reported separately.">
+      <div class="model-status-row">
+        <span class="prod-badge">
+          <span class="prod-badge-dot" aria-hidden="true"></span>
+          Production · Champion
+        </span>
+      </div>
+      <div class="hero-model-name">Tuned XGBoost</div>
+      <div class="hero-metrics">
+        <div class="hero-metric">
+          <span class="hero-metric-label">Holdout R²</span>
+          <span class="hero-metric-value">0.921</span>
+        </div>
+        <div class="hero-metric">
+          <span class="hero-metric-label">Holdout RMSE</span>
+          <span class="hero-metric-value">$103.8K</span>
+        </div>
+        <div class="hero-metric">
+          <span class="hero-metric-label">Model</span>
+          <span class="hero-metric-value">Tuned XGBoost</span>
+        </div>
+        <div class="hero-metric">
+          <span class="hero-metric-label">Inputs</span>
+          <span class="hero-metric-value">Tabular + Geo</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- ============================================================
+     MODEL SWITCHER (sticky)
+============================================================ -->
+<div class="switcher-bar">
+  <div class="switcher-inner" role="tablist" aria-label="Model selection">
+    <button type="button" class="switcher-btn primary-tab" role="tab"
+            id="tab-primary" aria-selected="true" aria-controls="panel-primary">
+      <span class="tab-icon production" aria-hidden="true">◈</span>
+      Primary Valuation · XGBoost
+      <span class="tab-badge prod">Production</span>
+    </button>
+  </div>
+</div>
+
+<!-- ============================================================
+     PAGE BODY
+============================================================ -->
+<div class="page-body">
+
+  <!-- ======================== PRIMARY PANEL ======================== -->
+  <div class="panel active workspace" id="panel-primary" role="tabpanel" tabindex="-1" aria-labelledby="tab-primary">
+
+    <!-- LEFT: Input workspace -->
+    <section class="card" aria-label="Property details input">
+      <div class="card-header">
+        <h2 class="card-title">Property Details</h2>
+      </div>
+
+      <form id="primary-form" novalidate>
+
+        <div class="form-section">
+          <span class="section-label">Home</span>
+          <div class="field-grid">
+            <div class="field">
+              <label for="bedrooms">Bedrooms</label>
+              <input id="bedrooms" name="bedrooms" type="number" value="3" step="1" min="1" max="20">
+            </div>
+            <div class="field">
+              <label for="bathrooms">Bathrooms</label>
+              <input id="bathrooms" name="bathrooms" type="number" value="2.0" step="0.25" min="0.5" max="20">
+            </div>
+            <div class="field">
+              <label for="sqft_living">Living area (sq ft)</label>
+              <input id="sqft_living" name="sqft_living" type="number" value="1910" step="1" min="200" max="10000">
+            </div>
+            <div class="field">
+              <label for="sqft_lot">Lot size (sq ft)</label>
+              <input id="sqft_lot" name="sqft_lot" type="number" value="7600" step="1" min="200" max="500000">
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <span class="section-label">Quality &amp; amenities</span>
+          <div class="field-grid">
+            <div class="field">
+              <label for="grade">Grade</label>
+              <select id="grade" name="grade">
+                <option value="1">1 — Cabin</option>
+                <option value="2">2 — Minimal</option>
+                <option value="3">3 — Small</option>
+                <option value="4">4 — Low</option>
+                <option value="5">5 — Fair</option>
+                <option value="6">6 — Low average</option>
+                <option value="7" selected>7 — Average</option>
+                <option value="8">8 — Good</option>
+                <option value="9">9 — Better</option>
+                <option value="10">10 — Very good</option>
+                <option value="11">11 — Excellent</option>
+                <option value="12">12 — Luxury</option>
+                <option value="13">13 — Mansion</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="condition">Condition</label>
+              <select id="condition" name="condition">
+                <option value="1">1 — Poor</option>
+                <option value="2">2 — Fair</option>
+                <option value="3" selected>3 — Average</option>
+                <option value="4">4 — Good</option>
+                <option value="5">5 — Very good</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="view">View</label>
+              <select id="view" name="view">
+                <option value="0" selected>None</option>
+                <option value="1">Fair</option>
+                <option value="2">Average</option>
+                <option value="3">Good</option>
+                <option value="4">Excellent</option>
+              </select>
+            </div>
+            <div class="field">
+              <span class="field-control-label" id="waterfront-label">Waterfront</span>
+              <div class="segmented" role="radiogroup" aria-labelledby="waterfront-label">
+                <input type="radio" id="waterfront-no" name="waterfront" value="0" checked>
+                <label for="waterfront-no">No</label>
+                <input type="radio" id="waterfront-yes" name="waterfront" value="1">
+                <label for="waterfront-yes">Yes</label>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <span class="section-label">Structure</span>
+          <div class="field-grid">
+            <div class="field">
+              <label for="yr_built">Year built</label>
+              <input id="yr_built" name="yr_built" type="number" value="1975" step="1" min="1800" max="2100">
+            </div>
+            <div class="field">
+              <label for="floors">Floors</label>
+              <input id="floors" name="floors" type="number" value="1.5" step="0.5" min="1" max="10">
+            </div>
+            <div class="field">
+              <label for="sqft_above">Above-ground area (sq ft)</label>
+              <input id="sqft_above" name="sqft_above" type="number" value="1560" step="1" min="100" max="12000">
+            </div>
+            <div class="field">
+              <label for="sqft_basement">Basement area (sq ft)</label>
+              <input id="sqft_basement" name="sqft_basement" type="number" value="0" step="1" min="0" max="8000">
+            </div>
+            <div class="field">
+              <label for="yr_renovated">Year renovated</label>
+              <input id="yr_renovated" name="yr_renovated" type="number" value="0" step="1" min="0" max="2100">
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <span class="section-label">Location &amp; neighborhood</span>
+          <span class="section-sublabel">Neighborhood</span>
+          <div class="field-grid">
+            <div class="field">
+              <label for="zipcode">ZIP code</label>
+              <input id="zipcode" name="zipcode" type="number" value="98065" step="1" min="10000" max="99999">
+            </div>
+            <div class="field">
+              <label for="sqft_living15">Avg. nearby living area</label>
+              <input id="sqft_living15" name="sqft_living15" type="number" value="1840" step="1" min="200" max="10000">
+            </div>
+            <div class="field">
+              <label for="sqft_lot15">Avg. nearby lot size</label>
+              <input id="sqft_lot15" name="sqft_lot15" type="number" value="7620" step="1" min="200" max="500000">
+            </div>
+          </div>
+          <span class="section-sublabel">Coordinates</span>
+          <div class="field-grid">
+            <div class="field">
+              <label for="lat">Latitude</label>
+              <input id="lat" name="lat" type="number" value="47.5724" step="any" min="-90" max="90">
+            </div>
+            <div class="field">
+              <label for="long">Longitude</label>
+              <input id="long" name="long" type="number" value="-122.2300" step="any" min="-180" max="180">
+            </div>
+          </div>
+          <p class="field-hint">Used to derive geographic valuation signals.</p>
+        </div>
+
+        <input type="hidden" name="sale_year" value="2015">
+        <input type="hidden" name="sale_quarter" value="3">
+
+        <div class="loading-bar" id="primary-loading" aria-live="polite">
+          <div class="spinner" aria-hidden="true"></div>
+          <span id="primary-loading-text">Estimating market value…</span>
+        </div>
+
+        <div class="status-msg" id="primary-msg" role="alert" aria-live="polite"></div>
+
+        <div class="form-actions">
+          <button type="button" class="btn-secondary" id="primary-example" title="Pre-fills the form with a representative King County property.">
+            Try an example
+          </button>
+          <button type="submit" class="btn-primary" id="primary-submit">
+            Estimate market value
+          </button>
+          <button type="button" class="btn-ghost" id="primary-reset">Reset form</button>
+        </div>
+      </form>
+    </section>
+
+    <!-- RIGHT: Result / empty -->
+    <div class="result-column" aria-live="polite">
+
+      <div class="card" id="primary-empty">
+        <div class="empty-state">
+          <h2 class="empty-label">Your Estimate</h2>
+          <div class="empty-icon-wrap" aria-hidden="true">
+            <svg width="22" height="22" viewBox="0 0 32 32" fill="none">
+              <path d="M16 4L3 14v14h9V20h8v8h9V14L16 4Z" stroke="#2563EB" stroke-width="2" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <p class="empty-text">Your valuation will appear here.</p>
+          <p class="empty-subtext">Try an example, or complete the property details to generate an estimate.</p>
+        </div>
+      </div>
+
+      <div class="card result-card" id="primary-result" aria-live="polite" aria-atomic="true">
+        <div class="result-price-section">
+          <h2 class="result-eyebrow">Estimated market value</h2>
+          <div class="result-price" id="primary-price">—</div>
+          <div class="result-meta">
+            <span class="result-meta-label">Tuned XGBoost · Production</span>
+          </div>
+        </div>
+
+        <div class="result-divider"></div>
+
+        <div class="model-performance">
+          <h3 class="perf-label">Model Validation</h3>
+          <div class="perf-grid">
+            <div class="perf-item">
+              <span class="perf-name">Holdout R²</span>
+              <span class="perf-value">0.921</span>
+            </div>
+            <div class="perf-item">
+              <span class="perf-name">Holdout RMSE</span>
+              <span class="perf-value">$103.8K</span>
+            </div>
+            <div class="perf-item">
+              <span class="perf-name">Validation</span>
+              <span class="perf-value" style="font-size:13px">Random 80/20 holdout</span>
+            </div>
+            <div class="perf-item">
+              <span class="perf-name">Validation error</span>
+              <span class="perf-value" style="font-size:13px">$103.8K RMSE</span>
+            </div>
+          </div>
+          <p class="typical-line" id="primary-typical"></p>
+          <p class="factors-note">RMSE summarizes prediction error across the holdout set; it is not an individual prediction interval. Spatial and temporal robustness are reported separately in the research notes.</p>
+        </div>
+
+        <div class="result-divider"></div>
+
+        <div class="shap-section">
+          <h3 class="perf-label">Why this estimate?</h3>
+          <div class="shap-list" id="primary-shap" aria-label="Local explanation: top contributors to this estimate"></div>
+          <p class="factors-note">Local TreeSHAP contribution from the deployed model for this specific property. Positive values raise the estimate; negative values lower it.</p>
+        </div>
+
+        <div class="result-divider"></div>
+
+        <div class="factors-section">
+          <h3 class="factors-title">Model Feature Importance · Gain</h3>
+          <ul class="factor-list" id="primary-factors" aria-label="Global gain importance of model features"></ul>
+          <p class="factors-note">Global gain importance across the evaluation data. Higher values indicate greater overall contribution to model predictions; they do not explain this individual estimate.</p>
+        </div>
+
+        <div class="result-actions">
+          <button type="button" class="btn-result-action" id="primary-copy">Copy summary</button>
+          <button type="button" class="btn-result-action" id="primary-clear">Clear result</button>
+        </div>
+      </div>
+
+    </div>
+  </div><!-- /panel-primary -->
+
+</div><!-- /page-body -->
+
+<footer class="site-footer">
+  <p>
+    <strong>Research note:</strong> satellite imagery was evaluated separately as a potential valuation signal.
+    This application estimates value from structured and geospatial tabular data only.
+  </p>
+</footer>
+
+<script>
+"use strict";
+
+/* ============================================================
+   STATE
+   ============================================================ */
+let primaryState  = { hasResult: false, price: null, factors: [] };
+let primaryAbort  = null;
+
+/* ============================================================
+   ELEMENT REFERENCES
+   ============================================================ */
+const primaryForm       = document.getElementById('primary-form');
+const primarySubmit     = document.getElementById('primary-submit');
+const primaryLoading    = document.getElementById('primary-loading');
+const primaryMsg        = document.getElementById('primary-msg');
+const primaryEmpty      = document.getElementById('primary-empty');
+const primaryResult     = document.getElementById('primary-result');
+const primaryPrice      = document.getElementById('primary-price');
+const primaryFactors    = document.getElementById('primary-factors');
+const primaryShap       = document.getElementById('primary-shap');
+const primaryTypical    = document.getElementById('primary-typical');
+
+/* ============================================================
+   VALIDATION RULES
+   ============================================================ */
+const PRIMARY_RULES = {
+  bedrooms:     { type:'int',   min:1,    max:20     },
+  bathrooms:    { type:'float', min:0.5,  max:20     },
+  sqft_living:  { type:'int',   min:200,  max:10000  },
+  sqft_lot:     { type:'int',   min:200,  max:500000 },
+  floors:       { type:'float', min:1,    max:10     },
+  waterfront:   { type:'int',   min:0,    max:1      },
+  view:         { type:'int',   min:0,    max:4      },
+  condition:    { type:'int',   min:1,    max:5      },
+  grade:        { type:'int',   min:1,    max:13     },
+  sqft_above:   { type:'int',   min:100,  max:12000  },
+  sqft_basement:{ type:'int',   min:0,    max:8000   },
+  yr_built:     { type:'int',   min:1800, max:2100   },
+  yr_renovated: { type:'int',   min:0,    max:2100   },
+  zipcode:      { type:'int',   min:10000,max:99999  },
+  lat:          { type:'float', min:-90,  max:90     },
+  long:         { type:'float', min:-180, max:180    },
+  sqft_living15:{ type:'int',   min:200,  max:10000  },
+  sqft_lot15:   { type:'int',   min:200,  max:500000 },
+};
+
+/* Human-readable names for validation messages (form fields). */
+const FIELD_LABELS = {
+  bedrooms:'Bedrooms', bathrooms:'Bathrooms', sqft_living:'Living area',
+  sqft_lot:'Lot size', floors:'Floors', waterfront:'Waterfront', view:'View',
+  condition:'Condition', grade:'Grade', sqft_above:'Above-ground area',
+  sqft_basement:'Basement area', yr_built:'Year built', yr_renovated:'Year renovated',
+  zipcode:'ZIP code', lat:'Latitude', long:'Longitude',
+  sqft_living15:'Avg. nearby living area', sqft_lot15:'Avg. nearby lot size',
+};
+
+/* Human-readable names for the importance panel (raw + engineered feature names). */
+const FEATURE_LABELS = {
+  bedrooms:'Bedrooms', bathrooms:'Bathrooms', sqft_living:'Living area',
+  sqft_lot:'Lot size', floors:'Floors', waterfront:'Waterfront', view:'View quality',
+  condition:'Condition', grade:'Grade', sqft_above:'Above-ground area',
+  sqft_basement:'Basement area', yr_built:'Year built', yr_renovated:'Year renovated',
+  zipcode:'ZIP code', lat:'Latitude', long:'Longitude',
+  sqft_living15:'Avg. nearby living area', sqft_lot15:'Avg. nearby lot size',
+  age:'Property age', renovated:'Recently renovated', renovation_age:'Years since renovation',
+  total_sqft:'Total built area', basement_frac:'Basement share', above_frac:'Above-ground share',
+  living_per_bedroom:'Living area per bedroom', lot_living_ratio:'Lot-to-living ratio',
+  zip_freq:'Neighborhood frequency', zip_target:'Neighborhood location signal',
+};
+
+function featureLabel(name) {
+  if (FEATURE_LABELS[name]) return FEATURE_LABELS[name];
+  return name.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+}
+
+/* ============================================================
+   SAMPLES
+   ============================================================ */
+const PRIMARY_SAMPLES = [
+  { bedrooms:3, bathrooms:2.5, sqft_living:2040, sqft_lot:6080, floors:2, waterfront:0, view:2, condition:4, grade:8, sqft_above:1700, sqft_basement:340, yr_built:1998, yr_renovated:2010, zipcode:98075, lat:47.6101, long:-122.2171, sqft_living15:2140, sqft_lot15:6200 },
+  { bedrooms:4, bathrooms:2.0, sqft_living:2430, sqft_lot:8790, floors:2, waterfront:0, view:0, condition:3, grade:7, sqft_above:2100, sqft_basement:330, yr_built:1973, yr_renovated:0,    zipcode:98052, lat:47.7071, long:-122.1100, sqft_living15:2300, sqft_lot15:8200 },
+  { bedrooms:2, bathrooms:1.5, sqft_living:1480, sqft_lot:4200, floors:1, waterfront:0, view:0, condition:3, grade:6, sqft_above:1480, sqft_basement:0,   yr_built:1957, yr_renovated:0,    zipcode:98118, lat:47.5513, long:-122.2834, sqft_living15:1520, sqft_lot15:4100 },
+  { bedrooms:5, bathrooms:3.0, sqft_living:3340, sqft_lot:10120,floors:2.5,waterfront:1, view:4, condition:5, grade:11,sqft_above:2900, sqft_basement:440, yr_built:2005, yr_renovated:2018, zipcode:98039, lat:47.5848, long:-122.1514, sqft_living15:3280, sqft_lot15:9700 },
+  { bedrooms:3, bathrooms:2.0, sqft_living:1865, sqft_lot:6900, floors:1.5,waterfront:0, view:1, condition:4, grade:8, sqft_above:1580, sqft_basement:285, yr_built:1989, yr_renovated:2005, zipcode:98074, lat:47.3577, long:-122.1723, sqft_living15:1930, sqft_lot15:7120 },
+];
+
+/* ============================================================
+   UTILITIES
+   ============================================================ */
+function fmt$(n) {
+  return '$' + Number(n).toLocaleString(undefined, { maximumFractionDigits: 0 });
+}
+
+/** Animated price counter */
+function animatePrice(el, targetValue) {
+  const duration = 700;
+  const startTime = performance.now();
+  const startValue = 0;
+
+  function step(now) {
+    const elapsed = now - startTime;
+    const progress = Math.min(elapsed / duration, 1);
+    // ease-out cubic
+    const eased = 1 - Math.pow(1 - progress, 3);
+    const current = Math.round(startValue + (targetValue - startValue) * eased);
+    el.textContent = fmt$(current);
+    if (progress < 1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+
+function parseRule(val, rule) {
+  const n = Number(val);
+  if (!Number.isFinite(n)) return { ok: false };
+  if (rule.type === 'int' && !Number.isInteger(n)) return { ok: false };
+  if (n < rule.min || n > rule.max) return { ok: false };
+  return { ok: true, value: n };
+}
+
+function setFieldError(input, isError, msg) {
+  if (!input) return;
+  const list = input.tagName ? [input] : Array.from(input);
+  const name = input.name || (list[0] && list[0].name);
+  for (const el of list) {
+    el.classList.toggle('is-invalid', isError);
+    el.setAttribute('aria-invalid', isError ? 'true' : 'false');
+  }
+  const container = input.tagName ? input.closest('.field') : (list[0] ? list[0].closest('.field') : null);
+  if (!container) return;
+  let err = container.querySelector('.field-error');
+  if (!err) {
+    err = document.createElement('span');
+    err.className = 'field-error';
+    if (name) err.id = 'err-' + name;
+    container.appendChild(err);
+  }
+  if (name) {
+    for (const el of list) {
+      if (isError) el.setAttribute('aria-describedby', 'err-' + name);
+      else el.removeAttribute('aria-describedby');
+    }
+  }
+  err.hidden = !isError;
+  err.textContent = isError ? (msg || 'Please enter a valid value.') : '';
+}
+
+function showMsg(el, text, type) {
+  if (!text) { el.textContent = ''; el.removeAttribute('data-type'); return; }
+  el.textContent = text;
+  el.setAttribute('data-type', type || 'info');
+}
+
+function clearMsg(el) { showMsg(el, '', ''); }
+
+function setLoading(btn, loadingEl, isLoading) {
+  btn.disabled = isLoading;
+  loadingEl.classList.toggle('visible', isLoading);
+}
+
+/* ============================================================
+   PRIMARY PANEL (single valuation panel)
+   ============================================================ */
+function validatePrimary() {
+  const formData = new FormData(primaryForm);
+  let firstInvalid = null;
+  const payload = {};
+
+  for (const [name, rawVal] of formData.entries()) {
+    if (name === 'sale_year' || name === 'sale_quarter') { payload[name] = Number(rawVal); continue; }
+    const rule = PRIMARY_RULES[name];
+    if (!rule) continue;
+    const input = primaryForm.elements.namedItem(name);
+    const result = parseRule(rawVal, rule);
+    const label = FIELD_LABELS[name] || name;
+    const msg = result.ok ? '' : `${label} must be between ${rule.min} and ${rule.max}.`;
+    setFieldError(input, !result.ok, msg);
+    if (!result.ok && !firstInvalid) firstInvalid = input;
+    else if (result.ok) payload[name] = result.value;
+  }
+
+  if (firstInvalid) {
+    const focusEl = firstInvalid.tagName ? firstInvalid : firstInvalid[0];
+    if (focusEl) focusEl.focus();
+    showMsg(primaryMsg, 'Please check the highlighted fields.', 'error');
+    return null;
+  }
+  return payload;
+}
+
+/* ============================================================
+   PRIMARY SUBMIT
+   ============================================================ */
+primaryForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  clearMsg(primaryMsg);
+  const payload = validatePrimary();
+  if (!payload) return;
+
+  if (primaryAbort) primaryAbort.abort();
+  const ctrl = new AbortController();
+  primaryAbort = ctrl;
+
+  setLoading(primarySubmit, primaryLoading, true);
+  primaryResult.classList.remove('visible');
+  primaryEmpty.style.display = '';
+
+  try {
+    const res  = await fetch('/api/predict', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+      signal: ctrl.signal,
+    });
+    let body = {};
+    try { body = await res.json(); } catch (err) { /* non-JSON body */ }
+    if (!res.ok || body.error) {
+      const e = new Error(body.error || 'Unable to generate the estimate right now. Please try again.');
+      e.userMessage = e.message;
+      throw e;
+    }
+    if (ctrl.signal.aborted) return;
+
+    primaryState = { hasResult: true, price: body.predicted_price, factors: body.top_factors_gain || [] };
+
+    // Show result card first (before animation) so element is visible
+    primaryEmpty.style.display = 'none';
+    primaryResult.classList.add('visible');
+
+    // On small screens, bring the estimate into view without moving desktop position
+    if (window.innerWidth <= 860 && primaryResult.scrollIntoView) {
+      primaryResult.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    // Animated price counter
+    animatePrice(primaryPrice, Number(body.predicted_price));
+
+    // Staggered factor bars
+    const factors = primaryState.factors.slice(0, 6);
+    const maxImp  = factors.length ? factors[0].importance : 1;
+    primaryFactors.innerHTML = factors.map((f, i) => {
+      const pct = Math.round((f.importance / maxImp) * 100);
+      return `<li class="factor-item" style="animation-delay:${i * 60}ms">
+        <div class="factor-left">
+          <span class="factor-name">${featureLabel(f.feature)}</span>
+          <span class="factor-bar-wrap" aria-hidden="true">
+            <span class="factor-bar" data-pct="${pct}" style="width:0%"></span>
+          </span>
+        </div>
+        <span class="factor-value">${Number(f.importance).toFixed(3)}</span>
+      </li>`;
+    }).join('') || '<li class="factor-item"><span class="factor-name">No importance data</span></li>';
+
+    // Animate bars in after a short delay
+    requestAnimationFrame(() => {
+      document.querySelectorAll('.factor-bar[data-pct]').forEach((bar, i) => {
+        setTimeout(() => { bar.style.width = bar.dataset.pct + '%'; }, 80 + i * 60);
+      });
+    });
+
+    // Typical error — empirical holdout segment for this price range
+    const band = body.error_band;
+    if (band && band.typical_error) {
+      const usd = Math.round(band.typical_error).toLocaleString();
+      primaryTypical.innerHTML = `Typical error for your value range: <span class="typical-strong">±$${usd}</span> (median across the holdout); it is not a prediction interval.`;
+      primaryTypical.classList.add('visible');
+    } else {
+      primaryTypical.classList.remove('visible');
+      primaryTypical.textContent = '';
+    }
+
+    // Local explanation — TreeSHAP for THIS prediction
+    const ls = body.local_shap;
+    const mkShapGroup = (title, items, direction) => {
+      if (!items.length) return '';
+      const max = Math.max(...items.map(i => Math.abs(i.contribution)), 1);
+      const rows = items.map(i => {
+        const pct = Math.round(Math.abs(i.contribution) / max * 100);
+        const sign = direction === 'up' ? '+' : '−';
+        const usd = Math.round(Math.abs(i.contribution)).toLocaleString();
+        return `<div class="shap-item">
+          <span class="shap-name">${i.label}</span>
+          <span class="shap-track" aria-hidden="true"><span class="shap-bar ${direction}" data-pct="${pct}" style="width:0%"></span></span>
+          <span class="shap-val ${direction}">${sign}$${usd}</span>
+        </div>`;
+      }).join('');
+      return `<div class="shap-group"><h4 class="shap-group-title">${title}</h4>${rows}</div>`;
+    };
+    if (ls && (ls.top_positive.length || ls.top_negative.length)) {
+      primaryShap.innerHTML =
+        mkShapGroup('Raises the estimate', ls.top_positive, 'up') +
+        mkShapGroup('Lowers the estimate', ls.top_negative, 'down');
+      requestAnimationFrame(() => {
+        primaryShap.querySelectorAll('.shap-bar[data-pct]').forEach((b, i) => {
+          setTimeout(() => { b.style.width = b.dataset.pct + '%'; }, 80 + i * 50);
+        });
+      });
+    } else {
+      primaryShap.innerHTML = '<p class="factors-note">Local explanation is unavailable for this estimate.</p>';
+    }
+
+  } catch (err) {
+    if (err.name === 'AbortError') return;
+    showMsg(primaryMsg, (err && err.userMessage) || 'Unable to generate the estimate right now. Please try again.', 'error');
+  } finally {
+    if (!ctrl.signal.aborted) setLoading(primarySubmit, primaryLoading, false);
+  }
+});
+
+/* ============================================================
+   SAMPLES
+   ============================================================ */
+document.getElementById('primary-example').addEventListener('click', () => {
+  const s = PRIMARY_SAMPLES[Math.floor(Math.random() * PRIMARY_SAMPLES.length)];
+  Object.entries(s).forEach(([k, v]) => {
+   const el = primaryForm.elements.namedItem(k);
+   if (el) { el.value = v; setFieldError(el, false); }
+  });
+  Object.keys(PRIMARY_RULES).forEach(k => {
+   const el = primaryForm.elements.namedItem(k);
+   if (el) setFieldError(el, false);
+  });
+  showMsg(primaryMsg, 'Example property loaded — estimate market value now.', 'info');
+});
+
+/* ============================================================
+   RESET / CLEAR
+   ============================================================ */
+document.getElementById('primary-reset').addEventListener('click', () => {
+  const defaults = {
+   bedrooms:3, bathrooms:2, sqft_living:1910, sqft_lot:7600, grade:7,
+   condition:3, yr_built:1975, floors:1.5, sqft_above:1560, sqft_basement:0,
+   sqft_living15:1840, sqft_lot15:7620, zipcode:98065, waterfront:0,
+   view:0, yr_renovated:0, lat:47.5724, long:-122.2300,
+  };
+  Object.entries(defaults).forEach(([k, v]) => {
+   const el = primaryForm.elements.namedItem(k);
+   if (el) { el.value = v; setFieldError(el, false); }
+  });
+  primaryState = { hasResult: false, price: null, factors: [] };
+  primaryResult.classList.remove('visible');
+  primaryEmpty.style.display = '';
+  clearMsg(primaryMsg);
+});
+
+document.getElementById('primary-clear').addEventListener('click', () => {
+  primaryState = { hasResult: false };
+  primaryResult.classList.remove('visible');
+  primaryEmpty.style.display = '';
+  clearMsg(primaryMsg);
+});
+
+/* ============================================================
+   COPY SUMMARY
+   ============================================================ */
+async function copySummary(kind) {
+  const text = `Residential Property Valuation — Estimate\nEstimated value: ${fmt$(primaryState.price)}\nModel: Tuned XGBoost (production)\nHoldout R² 0.921 · Holdout RMSE $103.8K`;
+  try {
+   await navigator.clipboard.writeText(text);
+   showMsg(primaryMsg, 'Summary copied to clipboard.', 'success');
+  } catch {
+   showMsg(primaryMsg, 'Could not copy — please copy manually.', 'error');
+  }
+}
+
+document.getElementById('primary-copy').addEventListener('click', () => copySummary('primary'));
+
+/* ============================================================
+   SEGMENTED CONTROL — roving tabindex so arrow keys + Tab behave
+   ============================================================ */
+(function initWaterfrontGroup() {
+  const label = document.getElementById('waterfront-label');
+  if (!label) return;
+  const group = label.closest('.segmented');
+  if (!group) return;
+  const radios = Array.from(group.querySelectorAll('input[type="radio"]'));
+  if (!radios.length) return;
+  const setTabs = () => radios.forEach(r => { r.tabIndex = r.checked ? 0 : -1; });
+  radios.forEach(r => { if (r.checked) r.tabIndex = 0; else r.tabIndex = -1; });
+  group.addEventListener('keydown', (e) => {
+    if (!['ArrowRight', 'ArrowLeft', 'ArrowUp', 'ArrowDown'].includes(e.key)) return;
+    e.preventDefault();
+    const idx = radios.findIndex(r => r.checked);
+    const next = (e.key === 'ArrowRight' || e.key === 'ArrowDown')
+      ? (idx + 1) % radios.length
+      : (idx - 1 + radios.length) % radios.length;
+    radios[next].checked = true;
+    setTabs();
+    radios[next].focus();
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,53 @@
+{
+  "generated": "2026-08-16T03:35:43.627Z",
+  "n_cases": 501,
+  "canonical": {
+    "id": 0,
+    "input": {
+      "bedrooms": 3,
+      "bathrooms": 2,
+      "sqft_living": 1910,
+      "sqft_lot": 7600,
+      "floors": 1.5,
+      "waterfront": 0,
+      "view": 0,
+      "condition": 3,
+      "grade": 7,
+      "sqft_above": 1560,
+      "sqft_basement": 0,
+      "yr_built": 1975,
+      "yr_renovated": 0,
+      "zipcode": 98065,
+      "lat": 47.5724,
+      "long": -122.23,
+      "sqft_living15": 1840,
+      "sqft_lot15": 7620,
+      "sale_year": 2015,
+      "sale_quarter": 3
+    },
+    "expected_prediction": 557597.38,
+    "expected_prediction_raw": 557597.375,
+    "node_prediction_raw": 557597.375
+  },
+  "tolerances": {
+    "prediction": 0.001,
+    "contribution": 1,
+    "base": 0.001
+  },
+  "prediction": {
+    "max_abs_error": 0,
+    "mean_abs_error": 0,
+    "max_relative_error": 0
+  },
+  "contributions": {
+    "max_abs_error": 0,
+    "mean_abs_error": 0,
+    "max_relative_error": 0,
+    "round_to_cents_mismatches": 0,
+    "top_factor_rank_mismatches": 0
+  },
+  "base": {
+    "max_abs_error": 0
+  },
+  "failed_cases": []
+}

@@ -1,18 +1,26 @@
 {
+  "$schema": "https://openapi.vercel.sh/vercel.json",
   "version": 2,
   "builds": [
+    { "src": "public/index.html", "use": "@vercel/static" },
     {
-      "src": "api/index.py",
-      "use": "@vercel/python",
+      "src": "api/predict.js",
+      "use": "@vercel/node",
       "config": {
-        "maxLambdaSize": "50mb"
+        "includeFiles": [
+          "node/scorer.js",
+          "models/deployed/tabular_model.json",
+          "models/deployed/tabular_pipeline.json",
+          "models/deployed/tabular_meta.json"
+        ]
       }
-    }
+    },
+    { "src": "api/health.js", "use": "@vercel/node" }
   ],
   "routes": [
-    { "src": "/api/(.*)", "dest": "/api/index.py" },
-    { "src": "/health",   "dest": "/api/index.py" },
-    { "src": "/predict",  "dest": "/api/index.py" },
-    { "src": "/",         "dest": "/api/index.py" }
+    { "src": "/api/predict", "dest": "/api/predict.js" },
+    { "src": "/api/health", "dest": "/api/health.js" },
+    { "src": "/health", "dest": "/api/health.js" },
+    { "src": "^/$", "dest": "/public/index.html" }
   ]
 }

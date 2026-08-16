@@ -43,6 +43,11 @@ logs/
 # --- Vercel local ---
 .vercel/
 
+# --- Node ---
+node_modules/
+
 # --- OS junk ---
 Thumbs.db
 .DS_Store
+.vercel
+.env*

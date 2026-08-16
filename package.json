@@ -1,0 +1,9 @@
+{
+  "name": "satellite-property-valuation",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Satellite-assisted property valuation. Live inference is a dependency-free Node scorer (node/scorer.js) invoked via Vercel functions (api/predict.js, api/health.js).",
+  "engines": {
+    "node": ">=20"
+  }
+}

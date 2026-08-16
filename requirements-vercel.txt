@@ -1,12 +1,15 @@
 # Minimal PRODUCTION dependency set — installed on the Vercel Python 3.12 function.
 #
-# This is the authoritative runtime file. It contains ONLY what the deployed app
-# imports (see reports/vercel_runtime_dependency_audit.md for the traced graph).
-# No torch / torchvision / vision / notebook / plotting / research deps.
+# Contains ONLY what the deployed app imports (traced & verified — see
+# reports/vercel_runtime_dependency_audit.md). No torch / vision / notebook /
+# plotting / scikit-learn / shap deps.
 #
-# Version floors+ceiling caps keep installs reproducible on Python 3.12 while
-# allowing the exact verified versions on other interpreters. Verified prediction
-# for the canonical property is 557597.38 under this set.
+#   - scikit-learn is intentionally ABSENT: the XGBRegressor artifact loads,
+#     predicts and explains via xgboost(+scipy) alone (verified 557597.38).
+#   - xgboost must resolve in the 3.x range: 2.x misreads this artifact's stored
+#     base_score and yields wrong predictions, so DO NOT downgrade it.
+#   - Resolves on Python 3.12 to numpy 2.x / pandas 3.x / scipy 1.18 / xgboost
+#     3.4.x — the exact versions that give bit-identical canonical predictions.
 
 # --- API runtime ---
 fastapi>=0.110
@@ -19,7 +22,6 @@ pandas>=2.1,<4
 scipy>=1.11
 
 # --- Inference ---
-scikit-learn>=1.4,<1.10
 xgboost>=2.0,<4
 joblib>=1.3
 # Local TreeSHAP is computed natively via XGBoost pred_contribs=True (no shap package).

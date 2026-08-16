@@ -1,260 +1,405 @@
-# Property Valuation with Satellite Imagery Analysis
+<h1 align="center">Residential Property Valuation</h1>
 
-**An end-to-end data science study testing whether satellite imagery adds predictive signal to
-residential property valuation.**
+<p align="center">
+  <em>Estimate residential sale prices from property characteristics and geospatial signals</em>
+</p>
 
-| | |
+<p align="center">
+  <a href="https://propertyvaluationbyhardik.vercel.app"><img src="https://img.shields.io/badge/Live_App-Deployed-blue?style=for-the-badge" alt="Live App"></a>
+  <a href="#quick-start"><img src="https://img.shields.io/badge/Quick_Start-Run_Locally-green?style=for-the-badge" alt="Quick Start"></a>
+  <a href="#model-development"><img src="https://img.shields.io/badge/R²-0.921-brightgreen?style=for-the-badge" alt="R²"></a>
+  <a href="#model-development"><img src="https://img.shields.io/badge/RMSE-103.8K-orange?style=for-the-badge" alt="RMSE"></a>
+  <a href="#reproducibility"><img src="https://img.shields.io/badge/Tests-29_passing-success?style=for-the-badge" alt="Tests"></a>
+</p>
+
+---
+
+## At a glance
+
+| Metric | Value |
 |---|---|
-| **Best production model** | Tuned XGBoost |
-| **RMSE** | \$103.8K |
-| **R²** | 0.921 |
-| **Key finding** | Frozen *and* task-trained ResNet18 experiments failed to provide competitive visual signal, so XGBoost remained the production champion. |
-
-**Quick answers**
-
-- **What?** A property-valuation system for King County, WA plus a satellite-imagery research branch.
-- **Why?** To test whether satellite imagery adds predictive information beyond
-  housing/geospatial features.
-- **What worked?** Engineered tabular + geospatial features → tuned XGBoost (RMSE \$103.8K, R² 0.921).
-- **What didn't?** Frozen embeddings and task-trained ResNet18 visual models (best R² 0.296 vs the
-  tabular control 0.872 on the same validation rows).
-- **What is deployed?** XGBoost as the only production inference path. The satellite / ResNet18 work
-  remains documented as research only and is not exposed through the production app.
+| **Target** | Residential sale price (King County, WA — 2014–15 sales) |
+| **Champion model** | Tuned XGBoost (535 trees, depth 4) |
+| **Features** | 33 engineered tabular + geospatial |
+| **Holdout R²** | 0.921 |
+| **Holdout RMSE** | $103,803 |
+| **Out-of-time R²** | 0.893 |
+| **Spatial R²** | 0.809 |
+| **Explainability** | Local TreeSHAP per prediction |
+| **Deployment** | Node.js on Vercel — no Python at runtime |
 
 ---
 
-## Authoritative artifacts
+## How it works
 
-The project keeps one canonical file per final deliverable in `reports/ARTIFACT_GUIDE.md`.
-Use that guide when you want the exact final model, metrics, split validation, SHAP, error analysis,
-satellite research result, submission, or report.
+```mermaid
+flowchart LR
+    A[Property Inputs\n20 raw fields] --> B[Feature Engineering\n33 model features]
+    B --> C[Tuned XGBoost\n535 trees]
+    C --> D[Local TreeSHAP\nper prediction]
+    C --> E[Error Band\nprice-segment typical error]
+    D --> F[API Response\npredicted_price + explanation]
+    E --> F
+    F --> G[Web App\ninteractive UI]
+
+    style A fill:#e8f4f8,stroke:#2196F3
+    style C fill:#fff3e0,stroke:#FF9800
+    style F fill:#e8f5e9,stroke:#4CAF50
+```
 
 ---
 
-## Results at a Glance
+## What it does
 
-![Architecture — research hypothesis test vs deployment pipeline](reports/figures/fig_architecture.png)
-![Full experiment sweep — the deployed model wins](reports/figures/fig_model_comparison.png)
+King County residential sale prices (2014–2015) are predicted from 20 raw property attributes plus 13 engineered features — including geospatial signals (distance to city center, ZIP-frequency encoding, latitude-longitude interaction). The production model is a single tuned XGBoost regressor with local TreeSHAP explanations computed at request time. The app runs entirely on Vercel's Node.js runtime; no Python, no external model server, no database.
 
-| Experiment | Model | Input | RMSE | R² |
+The same model also powers a command-line interface for batch inference and a Python FastAPI backend for local development.
+
+---
+
+## Data
+
+- **Source**: King County, WA residential sales (2014–2015)
+- **Training set**: 16,110 properties (after deduplication of 99 repeat-sale rows; most-recent transaction retained)
+- **Test set**: 5,404 properties (no price column; used for submission only)
+- **Overlap**: 70 property IDs appear in both train and test (same attributes; no label leakage since test carries no prices)
+- **Image coverage**: 2,189 / 16,110 = 13.59% (convenience sample — not used in production)
+
+### Feature engineering
+
+The 20 raw fields are augmented to 33 model features:
+
+| Feature | Type | Derivation |
+|---|---|---|
+| `age` | Derived | `SALE_REFERENCE_YEAR - yr_built` (ref = 2015) |
+| `renovated` | Binary | 1 if `yr_renovated > 0` |
+| `renovation_age` | Derived | `SALE_REFERENCE_YEAR - yr_renovated` if renovated, else 0 |
+| `total_sqft` | Derived | `sqft_above + sqft_basement` |
+| `basement_frac` | Derived | `sqft_basement / total_sqft` |
+| `above_frac` | Derived | `sqft_above / total_sqft` |
+| `living_per_bedroom` | Derived | `sqft_living / max(bedrooms, 1)` |
+| `lot_living_ratio` | Derived | `sqft_lot / sqft_living` |
+| `has_basement` | Binary | 1 if `sqft_basement > 0` |
+| `has_view` | Binary | 1 if `view > 0` |
+| `lat_long_interaction` | Derived | `lat * long` |
+| `dist_to_center_km` | Geospatial | Haversine distance to `(47.6062, -122.3321)` |
+| `zip_freq` | Frequency | Fraction of training rows in each ZIP code |
+| `zip_target` | Target-encoded | James-Stein shrinkage with smoothing=20; fold-safe (fitted on training split only, inside sklearn Pipeline) |
+
+---
+
+## Model development
+
+### Tuning
+
+- **Method**: RandomizedSearchCV — 30 iterations × 3-fold CV (`RANDOM_STATE=42`)
+- **Selection**: Temporal-generalization tie-break within 1% of random-holdout RMSE
+- **Champion params**: `learning_rate=0.087`, `max_depth=4`, `n_estimators=535`, `colsample_bytree=0.782`, `min_child_weight=5`, `reg_lambda=3.421`, `subsample=0.776`
+
+### Model comparison
+
+All models use the same 33 engineered features and the same 80/20 property-ID holdout.
+
+| Model | RMSE | MAE | R² | Notes |
 |---|---|---|---|---|
-| E1 — original 5 features | Linear Regression | 5 tabular features | \$233.4K | 0.598 |
-| E2 — full raw tabular | XGBoost | 21 raw features | \$115.1K | 0.902 |
-| E3 — engineered tabular | XGBoost | engineered tabular + geo | \$110.6K | 0.910 |
-| E4 — image-subset control | XGBoost | tabular on image-covered subset | \$126.8K | 0.872 |
-| E5 — satellite added | XGBoost | tabular + ResNet18 embeddings | \$139.8K | 0.844 |
-| E5B — satellite added (ResNet50) | XGBoost | tabular + ResNet50 embeddings | \$147.0K | 0.828 |
-| A1 — trained head (price MSE) | ResNet18 | image, trainable regression head | \$336.6K | 0.099 |
-| A2 — trained head (log-price) | ResNet18 | image, trainable regression head | \$334.0K | 0.113 |
-| B — partial fine-tune (layer4) | ResNet18 | image, fine-tuned layer4 + head | \$297.5K | 0.296 |
-| E6 — DINOv2 fusion (executed check) | XGBoost | tabular + DINOv2-vits14 embeddings | \$109.4K | 0.912 |
-| **FINAL — tuned** | **XGBoost** | **engineered tabular + geo** | **\$103.8K** | **0.921** |
+| **XGBoost (tuned)** | **103,803** | **61,172** | **0.9205** | **Champion — best generalization** |
+| CatBoost (tuned) | 102,801 | 61,584 | 0.9221 | Higher R² on random holdout, weaker out-of-time and spatial |
+| LightGBM | 111,882 | 62,944 | 0.9077 | — |
+| Stacked blend (Ridge) | 101,637 | 60,905 | 0.9238 | Weights: XGB 0.18 / Cat 0.63 / LGBM 0.22 |
+| Random Forest (tuned) | 118,910 | 66,237 | 0.8957 | — |
 
-Every number above is read directly from committed artifacts
-(`reports/results_tabular.csv`, `reports/results_multimodal.csv`, `reports/results_dinov2_fusion.json`,
-`reports/tuned_best.json`) — no manual re-entry.
-
-Population caveat: E1–E3 use the random 80/20 holdout (n=3,222); E6 uses the same full-population
-split (its own 0.9203 tabular control); A1/A2/B and E4/E5 use the 434 image-covered properties. Do
-not compare across populations directly.
+> **Why XGBoost and not the stack or CatBoost?** The stacked blend and CatBoost scored marginally better on the random holdout but degraded decisively on temporal and spatial generalization (CatBoost out-of-time R² 0.881 vs XGBoost 0.893; spatial R² 0.598 vs 0.809). The champion was selected for robustness, not leaderboard score.
 
 ---
 
-## Generalization — three holdouts, one honest number
+## Validation and generalization
 
-Same champion XGBoost, same engineered features, **only the split changes** — so the gaps isolate
-the effect of how far the model must extrapolate:
+Same tuned XGBoost, same 33 features — only the split strategy changes.
 
-| Holdout | What it tests | R² |
+| Leg | Train | Val | RMSE | R² | ΔR² vs random | What it tests |
+|---|---|---|---|---|---|---|
+| **Random 80/20** | 12,888 | 3,222 | 103,803 | 0.9205 | — | In-distribution accuracy |
+| **Temporal (out-of-time)** | 12,554 | 3,556 | 117,474 | 0.8926 | −0.028 | Forward generalization (cutoff 2015-03-01) |
+| **Spatial** | 15,656 | 454 | 95,433 | 0.809 | −0.112 | Geographic generalization (median nn = 0.094 km; 99.6% of val within 1 km of training) |
+
+The spatial gap (−0.112 R²) is the most informative: it isolates how well the model extrapolates to neighborhoods it has not seen at the exact same locations. The temporal gap (−0.028) is small, confirming the model does not overfit to the 2014–2015 market window.
+
+---
+
+## Explainability
+
+Every prediction ships with a **local TreeSHAP** explanation computed at request time — no external SHAP library, no precomputed cache. The XGBoost native `pred_contribs=True` API is used directly.
+
+**Global feature importance** (mean |TreeSHAP|, n=300):
+
+| Rank | Feature | Mean |SHAP|| |
 |---|---|---|
-| Random 80/20 | in-distribution interpolation (99.6% of val homes < 1 km from train) | **0.921** |
-| Out-of-time (2015 Mar–May) | predicting into the future | **0.893** |
-| Spatial (unseen KMeans neighborhoods) | predicting entire new neighborhoods | **0.809** |
+| 1 | `zip_target` | $78,038 |
+| 2 | `grade` | $62,199 |
+| 3 | `sqft_living` | $50,940 |
+| 4 | `dist_to_center_km` | $48,244 |
+| 5 | `lat` | $26,807 |
+| 6 | `view` | $15,931 |
+| 7 | `lat_long_interaction` | $15,330 |
+| 8 | `sqft_living15` | $15,002 |
+| 9 | `sqft_above` | $14,779 |
+| 10 | `condition` | $12,631 |
 
-The honest headline: the model is excellent at interpolation, still strong a quarter into the future,
-and noticeably weaker when a whole neighborhood must be closed entirely. Quote the **0.809** (or 0.893)
-for any out-of-sample claim, never just the random-split 0.921. Full details:
-`reports/split_strategy.json` and `reports/temporal_validation.json`.
+> These are global training-set importances displayed in the UI for context. The per-property explanations shown in the app are computed live from the deployed model and are specific to each input.
 
-![Generalization across random / temporal / spatial holdouts](reports/figures/fig_generalization.png)
+### Deployed local explanation
 
-**Reading the spatial number honestly.** The spatial-holdout RMSE is *lower in absolute terms* than
-the random-split value only because that small holdout (n=454, ~2 KMeans cells) covers a lower-variance
-price region. **R² is the more informative robustness comparison**, and it is the value quoted
-everywhere in this README.
+The API response includes:
+
+- `local_shap.expected_value` — SHAP base value ($538,904.63)
+- `local_shap.total_contribution` — sum of all feature contributions for this property
+- `local_shap.predicted_price` — `expected_value + total_contribution`, rounded to cents
+- `local_shap.top_positive` / `top_negative` — up to 5 features raising/lowering the estimate
+- `error_band` — typical error for the price segment containing the prediction
+
+**Canonical example** (3 bed / 2 bath / 1,910 sqft / 1975 / ZIP 98065):
+
+| Field | Value |
+|---|---|
+| Predicted price | $557,597.38 |
+| SHAP base (expected value) | $538,904.63 |
+| Total contribution | +$18,692.50 |
+| Top positive factor | `dist_to_center_km` (+$61,560) |
+| Top negative factor | `grade` (−$50,573) |
+| Error band | $512K–$686K (typical error $46,638; n=644) |
 
 ---
 
-## Model space was broadened — the champion was chosen for generalization
+## Error analysis
 
-We did not stop at one algorithm. On the same split we tuned and compared three families plus a
-leak-free OOF-Ridge stack:
+### By price band
 
-| Model | Random-holdout RMSE | R² |
+| Band | n | Mean price | RMSE | MAE | Median rel. error | Mean bias |
+|---|---|---|---|---|---|---|
+| Low (< $320K) | 807 | $254,898 | $54,703 | $36,511 | 9.8% | +$16,831 |
+| Mid ($320K–$450K) | 804 | $383,343 | $56,439 | $41,506 | 8.2% | +$9,877 |
+| High ($450K–$680K) | 805 | $530,781 | $70,762 | $52,107 | 7.4% | +$1,962 |
+| Luxury (> $680K) | 806 | $989,746 | $178,602 | $114,536 | 8.4% | −$30,171 |
+
+### Waterfront
+
+| Type | n | MAE | Mean bias | Mean price |
+|---|---|---|---|---|
+| Non-waterfront | 3,201 | $60,198 | +$436 | $529,580 |
+| Waterfront | 21 | $209,686 | −$124,356 | $2,082,738 |
+
+> Waterfront properties (n=21) are systematically underpredicted. The model sees too few waterfront examples to learn their premium reliably.
+
+---
+
+## Research: satellite imagery
+
+A parallel research track tested whether satellite imagery could improve the tabular model. The short answer is **no** — under the tested setup, imagery degraded performance.
+
+| Experiment | RMSE | R² | ΔR² vs tabular control |
+|---|---|---|---|
+| Tabular control (image subset) | 103,970 | 0.9203 | — |
+| DINOv2 fusion | 109,424 | 0.9117 | −0.009 |
+| E5 multimodal (frozen) | — | 0.845 | −0.075 |
+| E5B + RN50 (frozen) | — | 0.828 | −0.092 |
+| PCA on DINOv2 embeddings | — | ≤0.863 | −0.057 |
+| Image-only (no tabular) | — | ~0.14 | — |
+
+**Image coverage**: 13.59% of training properties (2,189 / 16,110). Coverage bias analysis found negligible differences across all measured attributes (all |Cohen's d| < 0.15).
+
+> The vision branch is archived as research documentation and is intentionally not exposed in the production app or CLI.
+
+---
+
+## Production app
+
+The deployed app at [propertyvaluationbyhardik.vercel.app](https://propertyvaluationbyhardik.vercel.app) works in five steps:
+
+1. **User enters property details** — bedrooms, bathrooms, sqft, year built, ZIP, coordinates, grade, condition, view, waterfront
+2. **Frontend sends `POST /api/predict`** — JSON payload with 20 raw fields
+3. **Node.js handler loads the request** — parses the body, validates ranges
+4. **`node/scorer.js` runs inference** — feature engineering → XGBoost float32 walk → local TreeSHAP → error band lookup
+5. **Response rendered** — estimated price, validation stats, top factors raising/lowering the estimate
+
+### Key design decisions
+
+- **No Python at runtime**: The production path is pure Node.js. Python remains for local development, training, and research only.
+- **No external model server**: XGBoost model weights are loaded from three JSON files (`tabular_model.json`, `tabular_pipeline.json`, `tabular_meta.json`) bundled with the Node function.
+- **500 MB function limit**: The Node.js deployment avoids the 500 MB Python runtime limit on Vercel's serverless functions.
+- **Bit-exact parity**: Node.js inference matches the Python oracle to within measurement noise (501-case golden set, max absolute error = 0 on prediction, contribution, and base value).
+
+---
+
+## API reference
+
+### `POST /api/predict`
+
+**Request**:
+
+```json
+{
+  "bedrooms": 3,
+  "bathrooms": 2.0,
+  "sqft_living": 1910,
+  "sqft_lot": 7600,
+  "floors": 1.5,
+  "waterfront": 0,
+  "view": 0,
+  "condition": 3,
+  "grade": 7,
+  "sqft_above": 1560,
+  "sqft_basement": 0,
+  "yr_built": 1975,
+  "yr_renovated": 0,
+  "zipcode": 98065,
+  "lat": 47.5724,
+  "long": -122.23,
+  "sqft_living15": 1840,
+  "sqft_lot15": 7620,
+  "sale_year": 2015,
+  "sale_quarter": 3
+}
+```
+
+**Response** (200):
+
+```json
+{
+  "predicted_price": 557597.38,
+  "model": "XGBoost tuned (tabular + engineered features)",
+  "model_role": "primary",
+  "status": "production",
+  "local_shap": {
+    "expected_value": 538904.63,
+    "total_contribution": 18692.5,
+    "predicted_price": 557597.12,
+    "top_positive": [
+      {"feature": "dist_to_center_km", "contribution": 61560.12, "label": "Distance to city center"}
+    ],
+    "top_negative": [
+      {"feature": "grade", "contribution": -50572.52, "label": "Construction grade"}
+    ],
+    "method": "TreeSHAP on the deployed model, evaluated at request time"
+  },
+  "error_band": {
+    "segment_label": "$512K–$686K",
+    "typical_error": 46637.89,
+    "n": 644,
+    "method": "median absolute error within the predicted-price decile segment",
+    "note": "RMSE summarizes prediction error across the holdout set; it is not an individual prediction interval."
+  }
+}
+```
+
+**Error responses**:
+
+| Status | Condition |
+|---|---|
+| 404 | Route not found (e.g. `GET /api/predict`) |
+| 422 | Invalid input (missing required field, value out of range) |
+| 500 | Internal error |
+
+### `GET /api/health`
+
+Returns `{"status": "ok", "model": "XGBoost tuned tabular"}`.
+
+---
+
+## Frontend
+
+The single-page UI at the root path (`/`) is a static HTML file (`public/index.html`, 60 KB) with no build step, no framework, and no embedded API keys. The only network call is `fetch('/api/predict')`.
+
+The UI displays:
+
+- Property input form (20 fields with validation)
+- Estimated market value
+- Model validation stats (holdout R², RMSE)
+- Typical error for the predicted price range
+- Top factors raising/lowering the estimate (local TreeSHAP)
+- Model feature importance (global, gain-based)
+
+<p align="center">
+  <img src="images/screenshots/screenshot-landing.png" alt="Landing page — property input form with model validation stats" width="48%">
+  &nbsp;&nbsp;
+  <img src="images/screenshots/screenshot-result.png" alt="Prediction result — estimated market value with local SHAP explanation" width="48%">
+</p>
+
+---
+
+## Deployment architecture
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  Vercel (propertyvaluationbyhardik.vercel.app)                  │
+│                                                                 │
+│  ┌──────────────┐  ┌──────────────┐  ┌────────────────────┐    │
+│  │ public/      │  │ api/health.js│  │ api/predict.js     │    │
+│  │ index.html   │  │ GET 200      │  │ POST → inference   │    │
+│  │ (static)     │  │              │  │                    │    │
+│  └──────────────┘  └──────────────┘  └────────┬───────────┘    │
+│                                                │                │
+│                                    ┌───────────▼───────────┐    │
+│                                    │ node/scorer.js        │    │
+│                                    │ feature engineering   │    │
+│                                    │ XGBoost float32 walk  │    │
+│                                    │ TreeSHAP (native)     │    │
+│                                    │ error band lookup     │    │
+│                                    └───────────┬───────────┘    │
+│                                                │                │
+│                              ┌─────────────────┼─────────┐      │
+│                              │ tabular_model.json        │      │
+│                              │ tabular_pipeline.json     │      │
+│                              │ tabular_meta.json         │      │
+│                              └───────────────────────────┘      │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+- **Routing**: `vercel.json` maps `/api/predict` and `/api/health` to Node.js functions; `/` to `public/index.html`; `/health` rewrites to `/api/health`.
+- **Model files**: Three JSON artifacts (model weights, feature pipeline, metadata) are bundled with the Node function via `includeFiles`.
+- **Protection**: Vercel Deployment Protection is disabled (was enabled by default; turned off via REST API to allow unauthenticated public access).
+- **Auto-deploy**: Git-linked to `gautamhardik/residential-property-valuation`; pushes to `main` trigger automatic deployments.
+
+---
+
+## Reproducibility
+
+### Research vs production
+
+| Concern | Research (Python) | Production (Node.js) |
 |---|---|---|
-| Tuned XGBoost (champion) | **$103.8K** | 0.9205 |
-| Tuned CatBoost | $103.6K | 0.9209 |
-| LightGBM | $111.9K | 0.9077 |
-| OOF-Ridge stack (all three) | $101.6K | 0.9238 |
+| Model training | `scripts/` + `src/models/` | Not applicable (pre-trained) |
+| Inference | `app/backend/main.py` (FastAPI) | `node/scorer.js` + `api/predict.js` |
+| Explainability | `shap` library (research plots) | XGBoost native `pred_contribs` (no `shap` package) |
+| Feature engineering | `src/features/build_features.py` | Embedded in `node/scorer.js` |
+| Dependencies | `requirements-research.txt` | `package.json` (Node ≥ 20) |
 
-**The surprise:** CatBoost and the stack beat XGBoost on the *in-distribution random holdout*, but
-that advantage evaporated the moment the model had to generalize — CatBoost's out-of-time R² was 0.881
-(vs XGBoost 0.893) and its spatial R² collapsed to **0.598** (vs XGBoost 0.809). CatBoost was
-over-exploiting the target-encoded ZIP signal. Because our selection is **generalization-aware**
-(temporal tie-break), XGBoost was kept as champion. Full details: `reports/results_ensemble.csv`,
-`reports/experiment_log.json`.
+### Local development
 
----
+```bash
+# Install Python deps (for research / local API)
+make install          # or: pip install -r requirements.txt
 
-## What happened when we added satellite imagery?
+# Run tests
+make test             # or: pytest -q
 
-This is the project's central experiment, so it deserves its own section.
+# Smoke-test the API
+make smoke            # or: python scripts/smoke_api.py
 
-1. **Coverage was limited.** Only **13.6%** of properties (2,189/16,110) had a usable Mapbox
-   `satellite-v9` 256 px tile (zoom 18). Tiles are keyed by property id; content-validated; cached.
-2. **Coverage was "attribute-neutral".** A dedicated analysis (`reports/coverage_bias.json`) compares
-   covered vs non-covered properties on price, grade, size, coordinates and waterfront: **all |Cohen's
-   d| < 0.15** (price d = −0.008, grade d = −0.039). The 13.6% is a convenience sample, but it is not
-   skewed on observable attributes — so the experiment below is not confounded by a biased image sample.
-3. **Frozen ImageNet encoders.** ResNet18 (512-d) and ResNet50 (2048-d), ImageNet-pretrained, frozen,
-   mean-pooled, extracted in `.eval()` under `no_grad` — *no* visual fine-tuning.
-4. **Fair comparison.** Image-only and tabular+embedding models were evaluated on the **same
-   image-covered subset**, the **same canonical split**, the **same metric**, and — for XGBoost — the
-   **exact tuned configuration** used by the final model.
-5. **Result.** Image-only models are near-useless (R² ≈ 0.14); adding embeddings to the tuned tabular
-   model **degrades** it (R² 0.872 → 0.844 / 0.828).
-6. **Decision.** The deployed model therefore remains the tabular/geospatial XGBoost. The satellite
-   premise was tested and, on this setup, rejected — explicitly and reproducibly.
+# Start the local API
+make run-api          # or: python app/run.py --reload
 
-**Scoped conclusion:** *Frozen ImageNet-derived ResNet18/50 satellite embeddings did not provide
-incremental predictive value over the tabular/geospatial baseline under the evaluated dataset and
-experimental setup.* This is a statement about this representation and dataset, not about "satellite
-imagery" in general.
-
-### What about fine-tuning? (the DL extension)
-
-The natural counter-argument is that frozen ImageNet features are the wrong representation and that
-*task-specific training* would recover visual signal. We ran exactly that experiment and stopped
-early:
-
-- **A1/A2 — trainable regression head** on a frozen ResNet18 (image-only): R² 0.099 / 0.113. Training
-  the head does not create visual signal that isn't already in the frozen features.
-- **B — partial fine-tune of layer4** + head (same split, early stopping, seed 42): R² 0.296. Fine-
-  tuning narrows the gap but remains far below the tabular control (0.872) on the *same* 434 image-
-  covered validation rows.
-- **Decision gate → Case 1 (STOP).** Because the trained visual signal (0.113 → 0.296) still
-  trails the tabular control by >0.57 R², the pre-registered gate stopped the planned
-  task-trained-embedding fusion (E6), ViT, full ResNet50 fine-tune, and TTA. Two additional
-  representation checks that **were** executed and committed also came back negative:
-  an E6 fusion with DINOv2-vits14 embeddings (R² 0.9117 vs 0.9203 tabular on the same covered
-  split) and PCA-ablated embeddings (best tabular variant 0.8634 vs 0.8721 control). None of
-  them beat the tabular champion, so the negative result holds across representations.
-  Full details: `reports/results_dinov2_fusion.json`, `reports/results_multimodal_pca.csv`.
-
-The vision branch remains **archived as research documentation** and is deliberately excluded from the
-production app. It is not exposed in the API or UI, and it is not the production champion. Grad-CAM
-and the image experiments remain in the repository as historical evidence for the negative result.
-Full details: `reports/project_report.md` §11 and `reports/results_dl_final.json`.
-
----
-
-## Research vs. deployment — keep them separate
-
-```
-RESEARCH (historical hypothesis test)      FINAL DEPLOYMENT (selected model)
-───────────────────────────────────────   ──────────────────────────────────
-
- Tabular ───────────────────────────────┐   Tabular + Geo
-                                       │      ↓
- Satellite → ResNet experiments ───────┼──> Engineered Features
-                                       │      ↓
-         compare on same split          │   Tuned XGBoost
-                                       │      ↓
-            embeddings do not help     │   Predicted Price
+# CLI inference
+make run-cli          # or: python -m app.cli --bedrooms 3 --bathrooms 2.0 ...
 ```
 
-The FastAPI service, CLI and demo UI serve the **tabular model** as the production default. Satellite
-imagery was evaluated as a research question, did not improve the validated model, and is therefore
-kept as a documented historical branch rather than a deployed feature. The vision experiments remain
-in the repository for transparency and reproducibility, but they are not presented to end users as part
-of the live product.
+### Node parity tests
 
----
-
-## Portfolio / resume-ready summary
-
-For a data-science resume, the project story is:
-
-- Built a full property-valuation pipeline from raw housing + geospatial data to a production-ready
- XGBoost regressor with feature engineering and evaluation.
-- Ran a controlled multimodal experiment to test whether satellite imagery adds value beyond the
- tabular baseline, and documented the result honestly: it did not.
-- Selected the champion using a generalization-aware decision rule — not a random-split leaderboard —
- which is a strong sign of judgment and ML rigor.
-- Kept the tabular model as the production service while archiving the image branch as research-only
- documentation, showing product discipline as well as scientific caution.
-
-This is a stronger story than simply saying "I built a vision app" because it demonstrates model
-selection rigor, robustness checks, and clear deployment boundaries.
-
----
-
-## Key findings
-
-- **XGBoost was the strongest model**, reaching RMSE \$103.8K / R² 0.921 on the random holdout (tuned
-  via `RandomizedSearchCV`, 30 iterations, 3-fold CV, fold-safe target encoding). It was kept as
-  champion precisely because it *generalized* best (temporal R² 0.893, spatial R² 0.809), not because
-  it won the random holdout.
-- **Broadening the model space found a better in-distribution model (CatBoost, stack)** — but they
-  overfit the ZIP target-encoding and collapsed out-of-time/spatially. The experiment, not the
-  leaderboard, chose the deployed model.
-- **Satellite embeddings did not improve prediction** under the tested frozen-ResNet setup — image-only
-  R² ≈ 0.14, and adding embeddings hurt the strong tabular control.
-- **Generalization is weaker than random-split performance**, so the headline 0.921 should never be
-  quoted as out-of-sample accuracy; use 0.893 (time) or 0.809 (space).
-- **ZIP/geographic information is highly predictive.** Global SHAP importance is led by the encoded
-  ZIP price signal, then `grade` and `sqft_living`:
-  `reports/figures/fig_shap_importance.png`. For the evaluated vision model, Grad-CAM shows *which
-  image regions are associated with its price prediction* — a description, not a causal claim:
-  `reports/figures/fig_gradcam.png`.
-
-**Business framing.** An R² of 0.92 in raw terms is abstract; what practitioners care about is where
-the dollars of error are. Errors concentrate non-uniformly:
-- **Luxury homes** dominate absolute error (RMSE \$178.6K, median relative error ≈ 8%). Underpredicted
-  on average (bias −\$30.2K) — a real tail-risk disclosure.
-- **Waterfront** (21 observations) is the hardest segment (MAE \$210K, bias −\$124K) — too few samples
-  to learn.
-- **Cheap homes** are overpredicted (Low-band bias +\$16.8K) — the model won't let prices fall far
-  enough.
-- Typical (median) **relative error is ≈ 8%** overall — i.e. a \$500K home is usually priced within
-  ~\$40K. Full table: `reports/error_analysis.json`.
-
----
-
-## Why this project matters
-
-This is more than house-price prediction. It is a complete research loop:
-**hypothesis → controlled experiment → honest negative result → investigation of why (coverage bias,
-representation) → model selection → deployment.** Negative results, run fairly, are rarer and more
-valuable than another tuned leaderboard. The repository shows exactly what was tried, why, and what
-the evidence says — not a demo bolted around an interesting-sounding idea.
-
----
-
-## Project structure
-
-```
-app/                 lightweight deployment (FastAPI backend + HTML demo + CLI)
-data/                raw train/test xlsx (large; not committed)
-archive/             historical research notes and provenance
-INTERVIEW_PREP.md    interview-ready summary of the main claims
-notebooks/           clean narrative notebooks + legacy history
-PACKAGE.md           package / structure guide
-predictions/         final submission.csv (5,404 rows)
-preprocessed/        satellite manifest, embeddings, deterministic train/val split
-reports/             phase artifacts, ARTIFACT_GUIDE.md, and full project report
-scripts/             phase scripts, one per step (seeded, idempotent); scripts/legacy/ = superseded
-src/                 importable package (data, features, models, satellite, evaluation, inference)
+```bash
+npm install           # install Node deps
+node node/test_prediction.js   # prediction parity (501 cases)
+node node/test_shap.js         # SHAP parity
+node node/test_contract.js     # API contract tests
+node node/parity.js            # full parity suite
 ```
 
 ---
@@ -262,126 +407,82 @@ src/                 importable package (data, features, models, satellite, eval
 ## Quick start
 
 ```bash
-python -m venv .venv && .venv\Scripts\activate   # macOS/Linux: source .venv/bin/activate
+# Clone
+git clone https://github.com/gautamhardik/residential-property-valuation.git
+cd residential-property-valuation
+
+# Option A — Python local API
 pip install -r requirements.txt
-```
-
-Run the project checks:
-
-```bash
-pytest -q
-make test
-```
-
-Build the API in Docker:
-
-```bash
-docker build -t satellite-property-valuation .
-docker run --rm -p 8000:8000 satellite-property-valuation
-```
-
-Run the full pipeline (each script is seeded & idempotent):
-
-```bash
-python scripts/data_audit.py            # data validation
-python scripts/tabular_baselines.py     # E1/E2/E3 baselines
-python scripts/split_validation.py      # controlled random vs spatial robustness
-python scripts/temporal_validation.py   # out-of-time (2015 Mar-May) robustness
-python scripts/tune_models.py           # fold-safe tuning + generalization-aware champion
-python scripts/ensemble_experiment.py   # broader model space + OOF-Ridge stack
-python scripts/satellite_coverage.py    # image manifest + coverage
-python scripts/coverage_bias.py         # covered vs non-covered distribution comparison
-python scripts/extract_embeddings.py    # ResNet18/50 embeddings (cached in preprocessed/)
-python scripts/multimodal_experiment.py # fair E4/E5 comparison
-python scripts/final_model.py           # retrain on full train -> submission + artifacts
-python scripts/error_analysis.py        # segment-level error report
-python scripts/shap_analysis.py         # global SHAP importance
-python scripts/phase1_manifest.py       # canonical 1,755/434 vision split + manifest
-python scripts/phase2_experiment_a.py   # Experiment A (trained head) + B (layer4 fine-tune)
-python scripts/phase3_4_eval_gate.py    # fair E4/E5/A1/A2 eval + decision gate
-python scripts/phase8_serialize.py        # full-model TorchScript + serialization verify
-python scripts/phase12_gradcam.py       # Grad-CAM from the actual evaluated model
-python scripts/phase13_14_final_table.py  # authoritative final table + conclusion
-python scripts/make_figures.py          # the polished report figures
-python scripts/smoke_api.py             # FastAPI smoke test
-```
-
-Infer a price with the deployed model:
-
-```bash
-# Preferred startup: automatically finds a free local port if 8000 is already in use
 python app/run.py
-# optional: PORT=8001 python app/run.py
-# optional: python app/run.py --reload
+# Open http://127.0.0.1:8000
 
-# Demo UI will open on the selected local port, e.g. http://127.0.0.1:8000
-python -m app.cli --bedrooms 3 --bathrooms 2.0 --sqft_living 1910 --sqft_lot 7600 \
-    --floors 1.5 --sqft_above 1560 --yr_built 1975 --zipcode 98065 \
-    --lat 47.5724 --long -122.2300 --sqft_living15 1840 --sqft_lot15 7620
-```
-
-The satellite / ResNet18 experiments are archived as research only — they are not callable
-from the app or the CLI. See the satellite sections below for the research conclusion.
-
-```python
-from src.inference.predict import predict_single
-predict_single({"bedrooms": 3, "bathrooms": 2.0, "sqft_living": 1910, ...})
-# -> {"predicted_price": ..., "importance_type": "xgboost_gain", "top_factors_gain": [...]}
-```
-
-## Deploy to Vercel
-
-A single Vercel deployment serves both the static frontend and the FastAPI backend:
-
-- `api/index.py` exposes the existing app under `/api/*` (e.g. `/api/predict`, `/api/health`);
-  `vercel.json` routes `/`, `/predict`, and `/health` into the same function.
-- `requirements.txt` is runtime-only; research/training deps live in `requirements-research.txt`
-  (never deployed).
-- `.vercelignore` keeps research artifacts (datasets, imagery, embeddings, vision checkpoints,
-  notebooks, tests, figures) out of the serverless bundle so the lambda stays ~1 MB.
-- No database, no secrets, no environment variables are required by production inference.
-- Local development already mirrors the deployed wiring: `python app/run.py` launches
-  `api.index:app`, so the same `/api/*` paths are used locally and in production.
-
-Run the same-origin integration locally, then push to Vercel (builds `api/index.py` automatically):
-
-```bash
-python app/run.py                      # local dev (same /api/* paths as prod)
-# vercel --prod                        # after: Vercel CLI deploy
+# Option B — Node parity tests
+npm install
+node node/parity.js
 ```
 
 ---
 
-## Limitations & future work
+## Demo video
 
-- **Scope:** King County 2014–2015 sales only; no claim of geographic or temporal generality. We now
-  *quantify* both gaps (temporal R² 0.893, spatial R² 0.809) rather than assume them away.
-- **Satellite:** 13.6% convenience-sampled coverage; single source/resolution (Mapbox, 256 px,
-  zoom 18); task-trained visual models tested (head-only and layer4 partial fine-tune) and rejected
-  by the pre-registered gate; central business district proxy rather than true CBD polygon.
-- **Evaluation:** the random-split headline reflects local interpolation; quote the out-of-time
-  (R² 0.893) or spatial-holdout (R² 0.809) for any out-of-sample claim.
-- **Business:** a sale price is not intrinsic value; predictions are point estimates, not appraisals.
-
-**Future work (explicitly not unfinished requirements):** higher-resolution or multi-angle/multi-
-temporal imagery, a remote-sensing-specific representation, larger/carefully-sampled coverage,
-geographically broader validation. These would change the *satellite* branch of the research — they
-do not change the deployed tabular model.
+<video controls src="docs/demo.mp4" width="100%">
+  Your browser does not support the video tag.
+  <a href="docs/demo.mp4">Download the demo video</a>.
+</video>
 
 ---
 
-## Reproducibility & integrity notes
+## Repository structure
 
-- **Leakage:** `zip_target` (smoothed ZIP target-encoding, λ=20) is fitted on the training split only
-  in every experiment, including fold-safe within tuning CV; validation/test prices never enter any
-  encoding. Full audit: `reports/project_report.md` §5.
-- **Champion is deterministic & recorded:** the tuned config + model family live in
-  `reports/tuned_best.json`; every downstream phase loads it through one factory so nothing drifts.
-  `reports/experiment_log.json` records each phase's artifact and rationale.
-- **Reproduction:** committing the satellite embeddings + split lets the multimodal phase re-run
-  offline; only the raw `data/*.xlsx` must be supplied.
-- **Submission:** `predictions/submission.csv` is a 1:1 mirror of `data/test.xlsx` (5,404 rows, 0 nulls,
-  id multiset identical, including the 8 legitimate repeat-sale ids in the test file).
+```
+├── api/                    # Vercel serverless functions
+│   ├── predict.js          # POST /api/predict handler
+│   └── health.js           # GET /api/health handler
+├── app/
+│   ├── backend/main.py     # Python FastAPI (local dev)
+│   ├── frontend/index.html # Production UI (60 KB)
+│   ├── cli.py              # CLI inference
+│   └── run.py              # Local API launcher
+├── docs/
+│   └── demo.mp4            # Demo video
+├── images/
+│   └── screenshots/        # App screenshots
+├── models/deployed/        # Production artifacts
+│   ├── tabular_model.json  # XGBoost weights
+│   ├── tabular_pipeline.json # Feature pipeline
+│   └── tabular_meta.json   # Metadata
+├── node/
+│   ├── scorer.js           # Node.js inference engine
+│   ├── parity.js           # Full parity suite
+│   ├── test_*.js           # Parity + contract tests
+│   └── ...
+├── reports/
+│   ├── figures/            # Analysis plots
+│   ├── node_scorer/        # Parity report + golden set
+│   └── *.json              # Metrics, audits, experiments
+├── src/
+│   ├── features/build_features.py  # Feature engineering
+│   ├── config.py           # Constants, paths, seeds
+│   └── inference/          # Python inference (local)
+├── tests/test_core.py      # 29 unit + integration tests
+├── vercel.json             # Routing + build config
+├── package.json            # Node deps
+├── Makefile                # install/test/smoke/run
+└── requirements.txt        # Python runtime deps
+```
 
-Full write-up: [`reports/project_report.md`](reports/project_report.md) · Clean notebooks:
-[`notebooks/`](notebooks) · Packaging & deployment: [`PACKAGE.md`](PACKAGE.md)
+---
+
+## Limitations
+
+- **Waterfront**: Only 21 waterfront properties in the validation set; predictions for waterfront homes should be treated as approximate.
+- **Luxury segment**: RMSE of $178,602 and mean bias of −$30,171 for homes above $680K — the model systematically underpredicts the most expensive properties.
+- **Image coverage**: Only 13.59% of training properties had satellite imagery available; the vision research track concluded that imagery did not improve performance under the tested setup.
+- **Temporal window**: Trained on 2014–2015 sales; extrapolation to significantly different market conditions has not been validated.
+- **Geographic scope**: King County, WA only. The model has not been tested on other markets.
+
+---
+
+## License
+
+See repository for license details.
