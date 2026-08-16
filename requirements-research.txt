@@ -17,6 +17,9 @@ seaborn>=0.13
 lightgbm>=4.0
 catboost>=1.2
 
+# --- Research/local-explainability plots (scripts/shap_analysis.py) ---
+shap>=0.44
+
 # --- Excel dataset loading (training only) ---
 openpyxl>=3.1
 

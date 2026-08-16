@@ -1,0 +1,25 @@
+# Minimal PRODUCTION dependency set — installed on the Vercel Python 3.12 function.
+#
+# This is the authoritative runtime file. It contains ONLY what the deployed app
+# imports (see reports/vercel_runtime_dependency_audit.md for the traced graph).
+# No torch / torchvision / vision / notebook / plotting / research deps.
+#
+# Version floors+ceiling caps keep installs reproducible on Python 3.12 while
+# allowing the exact verified versions on other interpreters. Verified prediction
+# for the canonical property is 557597.38 under this set.
+
+# --- API runtime ---
+fastapi>=0.110
+uvicorn>=0.28
+pydantic>=2.5
+
+# --- Data stack (production feature engineering) ---
+numpy>=1.26,<3
+pandas>=2.1,<4
+scipy>=1.11
+
+# --- Inference ---
+scikit-learn>=1.4,<1.10
+xgboost>=2.0,<4
+joblib>=1.3
+# Local TreeSHAP is computed natively via XGBoost pred_contribs=True (no shap package).

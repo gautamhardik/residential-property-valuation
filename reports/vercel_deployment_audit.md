@@ -62,11 +62,11 @@ deployment. Same-origin throughout → no CORS, no second backend domain.
 None. Research/provenance artifacts are retained (per non-negotiable rule 12); they are
 excluded from the deployment bundle, not deleted from the repo.
 
-## 6. Runtime dependencies (`requirements.txt`, verify)
+## 6. Runtime dependencies (final production set)
 
-`numpy, pandas, scipy, scikit-learn, xgboost, joblib, shap, fastapi, uvicorn, pydantic`
-(+ `pytest`, `httpx` for CI). `torch/torchvision/Pillow/opencv/matplotlib/seaborn/lightgbm/
-catboost/requests/python-dotenv/openpyxl/jupyter/ipykernel/nbformat` moved to
+`numpy, pandas, scipy, scikit-learn, xgboost, joblib, fastapi, uvicorn, pydantic`
+(+ `pytest`, `httpx` for CI). `shap` was removed from the runtime graph (replaced by
+XGBoost-native TreeSHAP, §18/§19); torch/vision/notebook/plotting deps live in
 `requirements-research.txt`.
 
 ## 7. Deployment dependencies
@@ -136,33 +136,75 @@ Smoke: **SMOKE OK**. Model/RMSE/R² unchanged; vision endpoints absent.
 **SMOKE OK**. API/offline parity intact (557597.38 == 557597.38). Champion checksum unchanged
 (manifest hashes pass). No vision/satellite functionality reintroduced.
 
+---
+
+## 18. Bundle-size remediation (813.56 MB → 271.4 MB)
+
+A first Vercel deploy failed with a **813.56 MB** function bundle (limit 500 MB uncompressed).
+Root cause: the build installed a research-heavy `requirements.txt` (torch/torchvision/opencv/
+Pillow ≈ 800 MB) into the Python function. `.vercelignore` was already excluding repository
+research files correctly; the size was **installed Python packages**, which ignores-list cannot shrink.
+
+Evidence-based reduction (see `reports/vercel_runtime_dependency_audit.md`):
+
+1. **Production deps isolated** → `requirements-vercel.txt` (authoritative, pinned, no test deps);
+   `requirements.txt` = same runtime set + CI test deps (`pytest`, `httpx`); `requirements-research.txt`
+   = full research env (dev only).
+2. **`shap` removed (≈ 127 MB)** — reconstructed locally via measurements: `shap` feeds a TreeSHAP
+   through `numba`+`llvmlite` (115 MB). Replaced with **XGBoost-native `pred_contribs=True`**,
+   verified **bit-identical** (max |Δ| = 0.0; base == shap `expected_value`; same explanation total).
+   `/predict` `local_shap` output is byte-for-byte the same; `shap` moved to `requirements-research.txt`.
+3. **Final measured bundle (fresh Python 3.12 install, `requirements-vercel.txt` only): 271.4 MB** —
+   well under 500 MB with ~229 MB headroom.
+
+Final size table (see audit report §5): scipy 83.3 · xgboost 55.1 · pandas 33.0 · scikit-learn 25.9 ·
+numpy+libs 39.6 · API/other ~35 MB. No torch/torchvision/opencv/Pillow/shap/numba/llvmlite deployed.
+
+Verified from the clean 3.12 environment (no `shap`, no `torch` importable): model loads,
+`predict_single` → **557597.38** exact, `local_summary` → identical values, `error_band` n=644.
+
+## 19. Vercel config & Python decision
+
+- **Kept legacy `builds`/`routes` in `vercel.json`**: required to route `/`, `/api/*`, `/predict`,
+  `/health` to the single FastAPI function. The Vercel note *"Due to builds existing in your
+  configuration file, the Build and Development Settings defined in your Project Settings will not
+  apply"* is **informational and expected**: it simply means project-settings build/dev commands are
+  overridden by our `vercel.json`, which is what we rely on. It does not disable dependency install.
+- **Python version**: Vercel selects 3.12 when unspecified (a known, stable runtime). Clean-env
+  verification was done on **Python 3.12.13** to match the deploy target; the repo's local env is
+  3.14 and CI is 3.11 — all three produce the identical 557597.38 (model is library-version-agnostic).
+  No `.python-version`-based pin is reliably honored by the legacy builder, so the target is
+  documented as 3.12 rather than force-pinned.
+
 ## Remaining limitations & manual steps
 
-- **Real Vercel deploy not executed here** — pushing/deploying requires your Vercel account.
-  The deployment path is fully simulated and fresh-clone-verified, but the first `vercel --prod`
-  is a manual step. Expected to build cleanly from `api/index.py` + trimmed requirements.
-- XGBoost loads the serialized champion with a benign "serialized with an older config"
-  warning (non-fatal; parity is exact). If you later retrain, prefer `Booster.save_model`.
-- Pin a Python runtime on Vercel (3.11) if you want to match CI exactly.
+- **Real `vercel --prod` not executed here** — deploying requires your Vercel account. The full
+  deployment path (bundle size, install, model load, `/api` parity, fresh-clone) has been
+  reproduced locally on Python 3.12 with a measured **271.4 MB** bundle; the final push is manual.
+- Benign XGBoost "serialized with an older config" load warning; parity is exact.
+- Vercel runtime Python is 3.12 (documented; not force-pinned).
 
 ---
 
 ## VERCEL READINESS: 9/10
 
-**Justification:** All five phase-1 blockers were resolved (import-time `mkdir`, fat
-`requirements.txt`, no `vercel.json`, no `api/index.py`, oversized bundle). The complete
-single-deployment path — static frontend → `/api/*` → FastAPI → feature engineering →
-tuned XGBoost → JSON — is verified end-to-end: 29/29 tests, 31/31 QA, SMOKE OK, exact
-offline/API parity, and a **fresh-clone run from a 1.00 MB bundle with zero local
-dependencies**. Research artifacts stay in the repo but out of the bundle, and the champion
-model is untouched.
+**Justification:** Every phase-1 blocker is resolved, and the bundle failure is now closed with an
+evidence-based fix: **813.56 MB → 271.4 MB** (< 500 MB limit, ~229 MB headroom). The production set
+contains only verified imports (fastapi, pydantic, numpy, pandas, scipy, scikit-learn, xgboost,
+joblib, uvicorn) — no torch/vision/research packages. `shap` was replaced by XGBoost-native TreeSHAP
+with **bit-identical** explanation output, so the API/schema/predictions are unchanged. Verified on a
+clean Python 3.12 env: model loads, `/predict` = 557597.38 exact, `local_summary` identical, error
+band present; `pytest` 29/29, QA 31/31, SMOKE OK. Champion model, features, and metrics untouched.
 
-The 1-point deduction: a real `vercel --prod` has not been executed in this environment
-(no Vercel credentials), so the very last step remains manual; every preceding deployment
-invariant is already proven. Once that push succeeds, readiness is 10/10.
+The 1-point deduction: the *literal* `vercel --prod` run and its resulting ".vercel/output" size
+report still require your Vercel account/credentials; every deployment invariant (including the
+271.4 MB production function size) has been reproduced locally on the target Python.
 
-**Blockers:** none remaining.
-**Warnings:** benign xgboost load warning; Vercel Python version not pinned.
-**Changes made:** see tables 3–4.
-**Tests passed:** 29/29 pytest · 31/31 QA · SMOKE OK · fresh-clone PASS · Vercel local sim PASS.
-**Remaining manual steps:** run `vercel` / `vercel --prod` with your account; (optional) pin Python 3.11.
+**BLOCKERS:** none. **WARNINGS:** benign XGBoost load warning; Vercel runtime Python (3.12) is
+documented, not force-pinned. **VERDICT: VERCEL DEPLOYMENT READY: YES** (pending the manual push).
+
+**Changed:** `src/inference/explain.py` (native TreeSHAP) · `requirements-vercel.txt` (new, minimal)
+· `requirements.txt`/`requirements-research.txt` (shap moved) · added
+`reports/vercel_runtime_dependency_audit.md`.
+**Tests passed:** 29/29 pytest · 31/31 QA · SMOKE OK · clean-env parity PASS (exact) · bundle 271.4 MB.
+**Remaining manual steps:** `vercel --prod` (needs your account); reconfirm final `.vercel/output` size.
