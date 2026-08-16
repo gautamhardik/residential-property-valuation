@@ -150,12 +150,12 @@ The temporal gap (−0.028) is small, confirming the model does not overfit to t
 ---
 
 ## Explainability
-
+ 
 Every prediction ships with a **local TreeSHAP** explanation computed at request time — no external SHAP library, no precomputed cache. The XGBoost native `pred_contribs=True` API is used directly.
-
+ 
 **Global feature importance** (mean |TreeSHAP|, n=300):
-
-| Rank | Feature | Mean |SHAP|| |
+ 
+| Rank | Feature | Mean Absolute SHAP |
 |---|---|---|
 | 1 | `zip_target` | $78,038 |
 | 2 | `grade` | $62,199 |
@@ -167,7 +167,7 @@ Every prediction ships with a **local TreeSHAP** explanation computed at request
 | 8 | `sqft_living15` | $15,002 |
 | 9 | `sqft_above` | $14,779 |
 | 10 | `condition` | $12,631 |
-
+ 
 > These are global training-set importances displayed in the UI for context. The per-property explanations shown in the app are computed live from the deployed model and are specific to each input.
 
 ### Deployed local explanation
